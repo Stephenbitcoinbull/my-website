@@ -1,0 +1,12 @@
+# Editor clutter
+.idea/
+.vscode/
+
+# System clutter
+.DS_Store
+Thumbs.db
+
+# Future-proofing for JS
+node_modules/
+dist/
+.env
