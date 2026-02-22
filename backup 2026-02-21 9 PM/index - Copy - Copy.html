@@ -1086,7 +1086,7 @@ function generateTerrain(type) {
                 break;
             }
  
-            case 'ruins': {
+            case 'perlin-ruins': {
                 // Main ruin structure - tangent creates sharp breaks
                 const ruinMain = Math.tan(nx * 3, 2.5) * 80;
                 const extraDetail = Math.abs(Math.sin(i * 0.15)) * 180 - Math.random() * 40;
