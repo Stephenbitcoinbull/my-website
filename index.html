@@ -66,11 +66,9 @@
         
         inputField.addEventListener('input', () => {
             const today = new Date();
-            const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-            const weekday = dayNames[today.getDay()];
-            
-            // The Logic: weekday + games + weekday + #
-            const secretCode = weekday + "games" + weekday + "#";
+            let dayNum = today.getDay(); // This gives us 1 for Monday
+            const secretCode = dayNum + "games" + dayNum + "#";
+
             
             if (inputField.value === secretCode) {
                 // Redirects to your hidden game path (lowercase as requested)
