@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Icarus | Robotics Testing Portal</title>
+    <style>
+        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #3498db; --text: #ecf0f1; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; color: #333; }
+        
+        /* The Stealth Entrance */
+        #dev-portal { position: absolute; top: 10px; left: 10px; opacity: 0.1; transition: opacity 0.3s; z-index: 100; }
+        #dev-portal:hover { opacity: 1; }
+        #access-key { border: 1px solid #ccc; border-radius: 4px; padding: 5px; font-size: 10px; width: 100px; background: rgba(255,255,255,0.8); outline: none; }
+
+        nav { background: var(--primary); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; color: white; }
+        .logo { font-weight: bold; font-size: 1.2rem; letter-spacing: 1px; }
+        .nav-links { display: flex; gap: 20px; }
+        .dropdown { position: relative; cursor: pointer; font-size: 0.9rem; }
+        .dropdown-content { display: none; position: absolute; background: white; color: black; min-width: 160px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); z-index: 1; padding: 10px; border-radius: 4px; top: 20px; }
+        .dropdown:hover .dropdown-content { display: block; }
+
+        .hero { padding: 80px 20px; text-align: center; background: linear-gradient(rgba(44, 62, 80, 0.85), rgba(44, 62, 80, 0.85)), url('https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1350&q=80'); background-size: cover; color: white; }
+        .status-tag { background: #e67e22; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; text-transform: uppercase; margin-left: 10px; }
+        .content { max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.8; }
+        .card { background: white; border-radius: 8px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+    <div id="dev-portal">
+        <input type="text" id="access-key" placeholder="Sys_ID...">
+    </div>
+
+    <nav>
+        <div class="logo">ICARUS_LABS v0.42</div>
+        <div class="nav-links">
+            <div class="dropdown">Telemetry
+                <div class="dropdown-content">Real-time Stream (Locked)<br>Sensor Logs<br>Historical Data</div>
+            </div>
+            <div class="dropdown">Documentation
+                <div class="dropdown-content">API Reference<br>Circuit Schematics</div>
+            </div>
+            <div class="dropdown">Hardware</div>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <h1>Autonomous Robotics Environment <span class="status-tag">WIP</span></h1>
+        <p>A testing suite for sensor-fusion and chassis navigation algorithms.</p>
+    </div>
+
+    <div class="content">
+        <div class="card">
+            <h2>Development Status</h2>
+            <p>This portal is currently under active development by the Robotics Club. It aims to provide a centralized dashboard for our automated chassis testing.</p>
+            <ul>
+                <li><strong>Current Focus:</strong> PID Loop Optimization</li>
+                <li><strong>Active Archive:</strong> Legacy telemetry relocated to <code>/assets/archive/</code></li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const inputField = document.getElementById('access-key');
+        
+        inputField.addEventListener('input', () => {
+            const today = new Date();
+            const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+            const weekday = dayNames[today.getDay()];
+            
+            // The Logic: weekday + games + weekday + #
+            const secretCode = weekday + "games" + weekday + "#";
+            
+            if (inputField.value === secretCode) {
+                // Redirects to your hidden game path (lowercase as requested)
+                window.location.href = "assets/archive/module_v1.html";
+            }
+        });
+    </script>
+</body>
+</html>
