@@ -58,7 +58,7 @@ const TANK_WIDTH = 24; const TANK_HEIGHT = 14; const CANVAS_WIDTH = 1200; const 
 const ANGLE_INCREMENT = 4;
 const POWER_INCREMENT = 7;
 
-const DEV_MODE = true;
+const DEV_MODE = false;
 
 const COLORS = {
 red: { primary: '#ef4444', dark: '#b91c1c', light: '#fca5a5', glow: '#dc2626' }, 
@@ -1334,16 +1334,16 @@ ${currentPlayer.color} ${currentPlayer.isPlane ? '✈' : '🔫'}
 
 <!-- Movement & Fire -->
 ${!currentPlayer.isPlane && !currentPlayer.empDisabled ? `
-<button onclick="window.tankWars.moveTank(-1)" class="w-5 h-5 bg-slate-700 hover:bg-slate-600 rounded text-white text-xs" ${currentPlayer.gas < 5 ? 'disabled' : ''}>◀</button>
+<button onclick="window.tankWars.moveTank(-1)" class="w-8 h-8 bg-slate-700 hover:bg-slate-600 rounded text-white text-xs" ${currentPlayer.gas < 5 ? 'disabled' : ''}>◀</button>
  
-<button onclick="window.tankWars.moveTank(1)" class="w-5 h-5 bg-slate-700 hover:bg-slate-600 rounded text-white text-xs" ${currentPlayer.gas < 5 ? 'disabled' : ''}>▶</button>
+<button onclick="window.tankWars.moveTank(1)" class="w-8 h-8 bg-slate-700 hover:bg-slate-600 rounded text-white text-xs" ${currentPlayer.gas < 5 ? 'disabled' : ''}>▶</button>
 ` : currentPlayer.isPlane ? `
-<button onclick="window.tankWars.movePlane(-1)" class="w-5 h-5 bg-slate-700 hover:bg-slate-600 rounded text-white text-xs">◀</button>
-<button onclick="window.tankWars.movePlane(1)" class="w-5 h-5 bg-slate-700 hover:bg-slate-600 rounded text-white text-xs">▶</button>
+<button onclick="window.tankWars.movePlane(-1)" class="w-8 h-8 bg-slate-700 hover:bg-slate-600 rounded text-white text-xs">◀</button>
+<button onclick="window.tankWars.movePlane(1)" class="w-8 h-8 bg-slate-700 hover:bg-slate-600 rounded text-white text-xs">▶</button>
 ` : ''}
 
 <!-- Fire Button -->
-<button onclick="window.tankWars.fire()" class="px-3 py-1 bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 hover:from-red-500 hover:via-orange-500
+<button onclick="window.tankWars.fire()" class="px-4 py-2 bg-gradient-to-r from-red-600 via-orange-600 to-yellow-600 hover:from-red-500 hover:via-orange-500
 hover:to-yellow-500 text-white font-black rounded text-xs shadow-lg ${!gameState.canFire ? 'opacity-50 cursor-not-allowed' : ''}" ${!gameState.canFire ? 'disabled' : ''}>
 🔥 FIRE
 </button>
@@ -1417,7 +1417,7 @@ ${currentPlayer.weapons.includes('plasma') ? 'border-2 border-lime-400 bg-indigo
 <button onclick="window.tankWars.buyItem('atomic')" class="px-2 py-2 rounded-lg text-white text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed
 ${currentPlayer.weapons.includes('atomic') ? 'border-2 border-lime-400 bg-lime-600' :
 'bg-lime-600/60 hover:bg-lime-600 border border-lime-500'}" ${currentPlayer.money < 500 &&
-!currentPlayer.weapons.includes('atomic') ? 'disabled' : ''}>☢️ATOMIC<br>$500</button>
+!currentPlayer.weapons.includes('atomic') ? 'disabled' : ''}>☢️ ATOMIC<br>$500</button>
 <button onclick="window.tankWars.buyItem('emp')" class="px-2 py-2 rounded-lg text-white text-xs font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed
 ${currentPlayer.weapons.includes('emp') ? 'border-2 border-lime-400 bg-purple-700' :
 'bg-purple-700/60 hover:bg-purple-700 border border-purple-600'}" ${currentPlayer.money < 550 && !currentPlayer.weapons.includes('emp') ? 'disabled' : ''}>⚡EMP<br>$550</button>
