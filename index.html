@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tank Wars</title>
+<title>Testing Site for Robotics</title>
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <style> @import
 url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
@@ -1821,70 +1821,80 @@ function openLuckyBox(tier) {
     const roll = Math.random() * 100;
     
     if (tier === 1) {
-        if (roll < 20) { 
+        if (roll < 15) { 
             player.weapons.push('medium');   // Always push, duplicates allowed
-        } else if (roll < 40) { 
+        } else if (roll < 30) { 
             player.weapons.push('cannonball');
-        } else if (roll < 60) { 
+        } else if (roll < 45) { 
             if (!player.isPlane && !player.empDisabled) {
                 player.gas = Math.min(100, player.gas + 25);
             } 
-        } else if (roll < 80) { 
+        } else if (roll < 60) { 
             if (player.isPlane) {
                 player.planeHealth = Math.min(100, player.planeHealth + 25);
             } else {
                 player.health = Math.min(100, player.health + 25);
             }
+         else if (roll < 75) {
+           player.money += 100;
         } else { 
-            player.money += 100;
+           player.money += 0; 
         }
         
     } else if (tier === 2) {
-        if (roll < 17) { 
+        if (roll < 16) { 
             player.weapons.push('large');
-        } else if (roll < 34) { 
+        } else if (roll < 33) { 
             player.weapons.push('sniper');
-        } else if (roll < 51) { 
+        } else if (roll < 50) { 
             player.weapons.push('guided');
-        } else if (roll < 65) { 
+        } else if (roll < 60) { 
             if (!player.isPlane && !player.empDisabled) {
                 player.gas = Math.min(100, player.gas + 40);
             } else {
                 player.money += 50;
             }
-        } else if (roll < 79) { 
+        } else if (roll < 70) { 
             if (player.isPlane) {
                 player.planeHealth = Math.min(100, player.planeHealth + 40);
             } else {
                 player.health = Math.min(100, player.health + 40);
             }
-        } else { 
-            player.money += 250;
+        }
+         else if (roll < 83) {
+           player.money += 250;
+         }
+         else { 
+            player.money += 0;
         }
         
     } else if (tier === 3) {
-        if (roll < 15) { 
+        if (roll < 13) { 
             player.weapons.push('atomic');
-        } else if (roll < 30) { 
+        } else if (roll < 26) { 
             player.weapons.push('plasma');
-        } else if (roll < 45) { 
+        } else if (roll < 39) { 
             player.weapons.push('emp');
-        } else if (roll < 60) { 
+        } else if (roll < 47) { 
             player.weapons.push('airstrike');
-        } else if (roll < 70) { 
+        } else if (roll < 57) { 
             if (player.isPlane) {
                 player.planeHealth = Math.min(100, player.planeHealth + 50);
             } else {
                 player.health = Math.min(100, player.health + 50);
             }
-        } else if (roll < 80) { 
+        } else if (roll < 67) { 
             if (!player.isPlane && !player.empDisabled) {
                 player.gas = Math.min(100, player.gas + 50);
             } else {
                 player.money += 50;
             }
-        } else { 
+        }
+         else if (roll < 82) {
             player.money += 500;
+         }
+         else { 
+            player.money += 0;
         }
     }
     
