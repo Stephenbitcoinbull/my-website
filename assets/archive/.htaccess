@@ -1,3 +1,7 @@
-﻿RewriteEngine On
-RewriteCond %{HTTP_REFERER} !^https?://(www\.)?shwalsh\.com/.*$ [NC]
-RewriteRule \.(html)$ - [F]
+<FilesMatch "\.(html)$">
+    Order Allow,Deny
+    Allow from env=shwalsh
+    Deny from all
+</FilesMatch>
+
+SetEnvIf Referer "shwalsh\.com" shwalsh
