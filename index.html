@@ -3,79 +3,733 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project Icarus | Robotics Testing Portal</title>
+    <title>Robotics Testing Portal</title>
     <style>
-        :root { --primary: #2c3e50; --secondary: #34495e; --accent: #3498db; --text: #ecf0f1; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: #f4f7f6; color: #333; }
+        :root { 
+            --primary: #2c3e50; 
+            --secondary: #34495e; 
+            --accent: #3498db; 
+            --success: #27ae60;
+            --warning: #e67e22;
+            --text: #ecf0f1; 
+        }
         
-        /* The Stealth Entrance */
-        #dev-portal { position: absolute; top: 10px; left: 10px; opacity: 0.1; transition: opacity 0.3s; z-index: 100; }
-        #dev-portal:hover { opacity: 1; }
-        #access-key { border: 1px solid #ccc; border-radius: 4px; padding: 5px; font-size: 10px; width: 100px; background: rgba(255,255,255,0.8); outline: none; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            background: #f4f7f6; 
+            color: #333; 
+        }
+        
+        /* The Stealth Entrance (top-left) */
+        #dev-portal { 
+            position: absolute; 
+            top: 10px; 
+            left: 10px; 
+            opacity: 0.1; 
+            transition: opacity 0.3s; 
+            z-index: 100; 
+        }
+        #dev-portal:hover { 
+            opacity: 1; 
+        }
+        #access-key { 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            padding: 5px; 
+            font-size: 10px; 
+            width: 100px; 
+            background: rgba(255,255,255,0.8); 
+            outline: none; 
+        }
+        
+        /* Secret pathway in bottom-right corner */
+        #secret-corner {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 30px;
+            height: 30px;
+            background: transparent;
+            z-index: 100;
+            cursor: pointer;
+            opacity: 0.1;
+            transition: opacity 0.3s;
+            border-radius: 50%;
+            border: 1px dashed #666;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #666;
+        }
+        #secret-corner:hover {
+            opacity: 0.5;
+            background: rgba(255,255,255,0.3);
+        }
+        #secret-input-container {
+            position: fixed;
+            bottom: 50px;
+            right: 10px;
+            display: none;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 101;
+            border: 1px solid #ccc;
+        }
+        #secret-input {
+            padding: 8px;
+            border: 1px solid #3498db;
+            border-radius: 4px;
+            width: 150px;
+            font-size: 12px;
+        }
+        #secret-submit {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 5px;
+        }
 
-        nav { background: var(--primary); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; color: white; }
-        .logo { font-weight: bold; font-size: 1.2rem; letter-spacing: 1px; }
-        .nav-links { display: flex; gap: 20px; }
-        .dropdown { position: relative; cursor: pointer; font-size: 0.9rem; }
-        .dropdown-content { display: none; position: absolute; background: white; color: black; min-width: 160px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); z-index: 1; padding: 10px; border-radius: 4px; top: 20px; }
-        .dropdown:hover .dropdown-content { display: block; }
+        nav { 
+            background: var(--primary); 
+            padding: 1rem 2rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+            color: white; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .logo { 
+            font-weight: bold; 
+            font-size: 1.2rem; 
+            letter-spacing: 1px; 
+        }
+        
+        .nav-links { 
+            display: flex; 
+            gap: 20px; 
+        }
+        
+        .dropdown { 
+            position: relative; 
+            cursor: pointer; 
+            font-size: 0.9rem; 
+        }
+        
+        .dropdown-content { 
+            display: none; 
+            position: absolute; 
+            background: white; 
+            color: black; 
+            min-width: 200px; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2); 
+            z-index: 10; 
+            padding: 15px; 
+            border-radius: 8px; 
+            top: 25px; 
+            left: 0;
+            border-top: 3px solid var(--accent);
+        }
+        
+        .dropdown:hover .dropdown-content { 
+            display: block; 
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online { background: #2ecc71; }
+        .status-offline { background: #e74c3c; }
+        .status-warning { background: #f39c12; }
 
-        .hero { padding: 80px 20px; text-align: center; background: linear-gradient(rgba(44, 62, 80, 0.85), rgba(44, 62, 80, 0.85)), url('https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1350&q=80'); background-size: cover; color: white; }
-        .status-tag { background: #e67e22; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.7rem; text-transform: uppercase; margin-left: 10px; }
-        .content { max-width: 800px; margin: 40px auto; padding: 0 20px; line-height: 1.8; }
-        .card { background: white; border-radius: 8px; padding: 25px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .hero { 
+            padding: 80px 20px; 
+            text-align: center; 
+            background: linear-gradient(rgba(44, 62, 80, 0.9), rgba(44, 62, 80, 0.9)), url('https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1350&q=80'); 
+            background-size: cover; 
+            color: white; 
+        }
+        
+        .status-tag { 
+            background: var(--warning); 
+            color: white; 
+            padding: 4px 12px; 
+            border-radius: 20px; 
+            font-size: 0.8rem; 
+            text-transform: uppercase; 
+            margin-left: 10px; 
+            letter-spacing: 1px;
+        }
+        
+        .content { 
+            max-width: 1200px; 
+            margin: 40px auto; 
+            padding: 0 20px; 
+            line-height: 1.8; 
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+        }
+        
+        .card { 
+            background: white; 
+            border-radius: 12px; 
+            padding: 25px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
+            margin-bottom: 0;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: var(--primary);
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 10px;
+            margin-top: 0;
+            font-size: 1.3rem;
+        }
+        
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .data-label {
+            font-weight: 600;
+            color: #7f8c8d;
+        }
+        
+        .data-value {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #ecf0f1;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.5s;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+            transform: scale(1.02);
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+        }
+        
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #d35400;
+        }
+        
+        .metric-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .metric {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        
+        .metric-label {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .log-console {
+            background: #1e272e;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            height: 150px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .log-entry {
+            padding: 3px 0;
+            border-bottom: 1px solid #34495e;
+            color: #bdc3c7;
+        }
+        
+        .log-time {
+            color: #3498db;
+            margin-right: 10px;
+        }
+        
+        footer {
+            background: var(--primary);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
 
+    <!-- Top-left secret portal (unchanged) -->
     <div id="dev-portal">
         <input type="text" id="access-key" placeholder="Sys_ID...">
     </div>
+    
+    <!-- New bottom-right secret corner -->
+    <div id="secret-corner">⚙️</div>
+    <div id="secret-input-container">
+        <input type="text" id="secret-input" placeholder="Enter code...">
+        <button id="secret-submit">→</button>
+    </div>
 
     <nav>
-        <div class="logo">Robotics Team Page v1</div>
+        <div class="logo">Robotics Team Page v2.4</div>
         <div class="nav-links">
             <div class="dropdown">Robot Balance
-                <div class="dropdown-content">Real-time Stream (Locked)<br>Sensor Logs<br>Historical Data</div>
+                <div class="dropdown-content">
+                    <div style="margin-bottom: 10px;"><span class="status-indicator status-online"></span> Main Gyro (online)</div>
+                    <div style="margin-bottom: 10px;"><span class="status-indicator status-online"></span> Accelerometer (online)</div>
+                    <div style="margin-bottom: 10px;"><span class="status-indicator status-warning"></span> PID Loop (calibrating)</div>
+                    <div style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
+                        <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8rem;" onclick="alert('Real-time stream would open here')">View Stream</button>
+                    </div>
+                </div>
             </div>
             <div class="dropdown">Documentation
-                <div class="dropdown-content">API Reference<br>Circuit Schematics</div>
+                <div class="dropdown-content">
+                    <div><a href="#" style="text-decoration: none; color: #333;" onclick="alert('API docs would open')">📄 API Reference</a></div>
+                    <div><a href="#" style="text-decoration: none; color: #333;" onclick="alert('Schematics would open')">🔌 Circuit Schematics</a></div>
+                    <div><a href="#" style="text-decoration: none; color: #333;" onclick="alert('Datasheets would open')">📊 Component Datasheets</a></div>
+                </div>
             </div>
-            <div class="dropdown">Hardware</div>
-            <div class="dropdown">Software</div>
+            <div class="dropdown">Hardware
+                <div class="dropdown-content">
+                    <div>🔧 Motor Controllers (4)</div>
+                    <div>🦾 Arm Assembly v2</div>
+                    <div>📡 Sensor Array</div>
+                    <div style="margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">Last calibrated: 2 days ago</div>
+                </div>
+            </div>
+            <div class="dropdown">Software
+                <div class="dropdown-content">
+                    <div>🐍 Python API v1.2.3</div>
+                    <div>☕ Java SDK v0.9.4</div>
+                    <div>📱 Mobile Controller App</div>
+                </div>
+            </div>
+            <div class="dropdown">Test Results
+                <div class="dropdown-content">
+                    <div>✅ Balance tests: 47/50 passed</div>
+                    <div>⚠️ Sensor accuracy: 94%</div>
+                    <div>❌ Motor latency: high</div>
+                </div>
+            </div>
         </div>
     </nav>
 
     <div class="hero">
-        <h1>Autonomous Robotics Environment <span class="status-tag">WIP</span></h1>
-        <p>A testing suite for sensors, balance, hardware, and software</p>
-    </div>
-
-    <div class="content">
-        <div class="card">
-            <h2>Development Status</h2>
-            <p>This portal is currently under active development by the Robotics Club. It aims to provide a centralized dashboard for our automated testing.</p>
-            <ul>
-                <li><strong>Current Focus:</strong> PID Loop Optimization</li>
-                <li><strong>Active Archive:</strong> Legacy telemetry relocated to <code>/assets/archive/</code></li>
-            </ul>
+        <h1>Autonomous Robotics Environment <span class="status-tag">v2.4.1</span></h1>
+        <p>Real-time sensor monitoring • Hardware testing • Software simulation</p>
+        <div style="margin-top: 30px;">
+            <button class="btn btn-success" onclick="startSimulation()">▶ Start Simulation</button>
+            <button class="btn btn-warning" onclick="calibrateSensors()" style="margin-left: 10px;">⚙ Calibrate Sensors</button>
         </div>
     </div>
 
-    <script>
-        const inputField = document.getElementById('access-key');
+    <div class="content">
+        <!-- Main Status Card -->
+        <div class="card">
+            <h2>🤖 Robot Status</h2>
+            <div class="metric-container">
+                <div class="metric">
+                    <div class="metric-value" id="battery-level">87%</div>
+                    <div class="metric-label">Battery</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="temp-level">42°C</div>
+                    <div class="metric-label">Core Temp</div>
+                </div>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Main Controller:</span>
+                <span class="data-value"><span class="status-indicator status-online"></span> Online</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Motor Drivers:</span>
+                <span class="data-value"><span class="status-indicator status-online"></span> 4/4 active</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Sensor Array:</span>
+                <span class="data-value"><span class="status-indicator status-warning"></span> 6/8 online</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">WiFi Signal:</span>
+                <span class="data-value">-48 dBm</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="cpu-progress" style="width: 34%;"></div>
+            </div>
+            <div class="data-row">
+                <span class="data-label">CPU Load:</span>
+                <span class="data-value" id="cpu-load">34%</span>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="rebootRobot()">🔄 Reboot</button>
+                <button class="btn btn-warning" onclick="emergencyStop()">⏹ Emergency Stop</button>
+            </div>
+        </div>
         
+        <!-- Sensor Data Card -->
+        <div class="card">
+            <h2>📊 Live Sensor Data</h2>
+            <div class="data-row">
+                <span class="data-label">Gyro (X/Y/Z):</span>
+                <span class="data-value" id="gyro-data">0.2 / -0.1 / 9.8</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Accelerometer:</span>
+                <span class="data-value" id="accel-data">0.98g / 0.02g / 0.01g</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Magnetometer:</span>
+                <span class="data-value" id="mag-data">31µT / -12µT / 8µT</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Ultrasonic (front):</span>
+                <span class="data-value" id="sonic-data">124 cm</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">IR Array:</span>
+                <span class="data-value">[0,0,1,1,0,1,0,0]</span>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="refreshSensors()">🔄 Refresh</button>
+                <button class="btn btn-success" onclick="logSensorData()">📝 Log Data</button>
+            </div>
+        </div>
+        
+        <!-- PID Tuning Card -->
+        <div class="card">
+            <h2>⚙ PID Loop Tuning</h2>
+            <div class="data-row">
+                <span class="data-label">P (Proportional):</span>
+                <span class="data-value" id="p-value">1.20</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 60%;"></div></div>
+            <div class="data-row">
+                <span class="data-label">I (Integral):</span>
+                <span class="data-value" id="i-value">0.05</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 25%;"></div></div>
+            <div class="data-row">
+                <span class="data-label">D (Derivative):</span>
+                <span class="data-value" id="d-value">0.30</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" style="width: 30%;"></div></div>
+            <div class="data-row">
+                <span class="data-label">Setpoint:</span>
+                <span class="data-value">0.0°</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Current Error:</span>
+                <span class="data-value" id="pid-error">+0.4°</span>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="tunePID()">🎛 Auto-tune</button>
+                <button class="btn btn-warning" onclick="resetPID()">↺ Reset</button>
+            </div>
+        </div>
+        
+        <!-- Motor Control Card -->
+        <div class="card">
+            <h2>🔧 Motor Diagnostics</h2>
+            <div class="data-row">
+                <span class="data-label">Motor 1 (Left):</span>
+                <span class="data-value"><span class="status-indicator status-online"></span> 1450 RPM</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Motor 2 (Right):</span>
+                <span class="data-value"><span class="status-indicator status-online"></span> 1432 RPM</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Motor 3 (Arm):</span>
+                <span class="data-value"><span class="status-indicator status-warning"></span> 320 RPM</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Motor 4 (Gripper):</span>
+                <span class="data-value"><span class="status-indicator status-online"></span> Idle</span>
+            </div>
+            <div class="data-row">
+                <span class="data-label">Total Current Draw:</span>
+                <span class="data-value">3.2 A</span>
+            </div>
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="testMotors()">🔍 Test All</button>
+                <button class="btn btn-success" onclick="stopMotors()">⏹ Stop</button>
+            </div>
+        </div>
+        
+        <!-- System Log Card -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h2>📋 System Console</h2>
+            <div class="log-console" id="log-console">
+                <div class="log-entry"><span class="log-time">[10:23:45]</span> System initialized</div>
+                <div class="log-entry"><span class="log-time">[10:23:46]</span> Sensor array self-test: PASS</div>
+                <div class="log-entry"><span class="log-time">[10:23:48]</span> Motor controllers detected: 4/4</div>
+                <div class="log-entry"><span class="log-time">[10:23:52]</span> PID loop started @ 100Hz</div>
+                <div class="log-entry"><span class="log-time">[10:24:01]</span> Calibration: Gyro offset -0.02°/s</div>
+                <div class="log-entry"><span class="log-time">[10:24:15]</span> Battery: 87%, 20.3V, 3.2A</div>
+                <div class="log-entry"><span class="log-time">[10:24:30]</span> WiFi signal: -48dBm (good)</div>
+                <div class="log-entry"><span class="log-time">[10:24:45]</span> Temperature: 42°C (nominal)</div>
+            </div>
+            <div class="button-group" style="margin-top: 15px;">
+                <button class="btn btn-primary" onclick="addLogEntry('Manual diagnostic triggered')">🔍 Run Diagnostic</button>
+                <button class="btn btn-success" onclick="clearLog()">🧹 Clear Log</button>
+                <button class="btn btn-warning" onclick="exportLog()">📤 Export Log</button>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        Robotics Team Internal Use Only • Last build: 2026-02-22 • All data simulated for testing
+    </footer>
+
+    <script>
+        // Top-left secret portal (unchanged)
+        const inputField = document.getElementById('access-key');
         inputField.addEventListener('input', () => {
             const today = new Date();
-            let dayNum = today.getDay(); // This gives us 1 for Monday
+            let dayNum = today.getDay(); // 0-6, where 0 is Sunday
             const secretCode = dayNum + "games" + dayNum + "#";
-
             
             if (inputField.value === secretCode) {
-                // Redirects to your hidden game path (lowercase as requested)
                 window.location.href = "assets/archive/module_v1.html";
             }
         });
+        
+        // Bottom-right secret corner
+        const secretCorner = document.getElementById('secret-corner');
+        const secretContainer = document.getElementById('secret-input-container');
+        const secretInput = document.getElementById('secret-input');
+        const secretSubmit = document.getElementById('secret-submit');
+        
+        secretCorner.addEventListener('click', () => {
+            secretContainer.style.display = 'flex';
+            secretInput.focus();
+        });
+        
+        document.addEventListener('click', (e) => {
+            if (!secretContainer.contains(e.target) && e.target !== secretCorner) {
+                secretContainer.style.display = 'none';
+            }
+        });
+        
+        secretSubmit.addEventListener('click', () => {
+            const code = secretInput.value;
+            // Change this code to whatever you want
+            if (code === 'hiddenpage') {
+                window.location.href = "assets/archive/module_v2.html";
+            } else {
+                secretInput.value = '';
+            }
+        });
+        
+        secretInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                secretSubmit.click();
+            }
+        });
+        
+        // Interactive functions to make the site feel real
+        function startSimulation() {
+            addLogEntry('Simulation started');
+            updateMetrics();
+        }
+        
+        function calibrateSensors() {
+            addLogEntry('Sensor calibration initiated');
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                addLogEntry(`Calibration ${progress}% complete`);
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    addLogEntry('Calibration complete');
+                }
+            }, 300);
+        }
+        
+        function rebootRobot() {
+            addLogEntry('REBOOT: System restarting...');
+            setTimeout(() => {
+                addLogEntry('REBOOT: System online');
+                addLogEntry('REBOOT: Self-test passed');
+            }, 2000);
+        }
+        
+        function emergencyStop() {
+            addLogEntry('⚠️ EMERGENCY STOP ACTIVATED');
+            document.getElementById('motor-status').innerHTML = '<span class="status-indicator status-offline"></span> Stopped';
+        }
+        
+        function refreshSensors() {
+            addLogEntry('Refreshing sensor data...');
+            // Update some random values to make it look real
+            document.getElementById('gyro-data').innerText = (Math.random()*0.5).toFixed(1) + ' / ' + (Math.random()*0.3-0.15).toFixed(1) + ' / 9.8';
+            document.getElementById('accel-data').innerText = (0.98 + Math.random()*0.04).toFixed(2) + 'g / ' + (Math.random()*0.05).toFixed(2) + 'g / ' + (Math.random()*0.05).toFixed(2) + 'g';
+        }
+        
+        function logSensorData() {
+            addLogEntry('Sensor data logged to file: sensor_log_20260222.csv');
+        }
+        
+        function tunePID() {
+            addLogEntry('PID auto-tuning started');
+            let p = 1.2, i = 0.05, d = 0.3;
+            const interval = setInterval(() => {
+                p += (Math.random() - 0.5) * 0.1;
+                i += (Math.random() - 0.5) * 0.01;
+                d += (Math.random() - 0.5) * 0.05;
+                document.getElementById('p-value').innerText = p.toFixed(2);
+                document.getElementById('i-value').innerText = i.toFixed(3);
+                document.getElementById('d-value').innerText = d.toFixed(2);
+                document.getElementById('pid-error').innerText = (Math.random()*1-0.5).toFixed(1) + '°';
+            }, 500);
+            setTimeout(() => clearInterval(interval), 5000);
+        }
+        
+        function resetPID() {
+            document.getElementById('p-value').innerText = '1.20';
+            document.getElementById('i-value').innerText = '0.05';
+            document.getElementById('d-value').innerText = '0.30';
+            document.getElementById('pid-error').innerText = '+0.0°';
+            addLogEntry('PID parameters reset to defaults');
+        }
+        
+        function testMotors() {
+            addLogEntry('Motor test sequence initiated');
+            addLogEntry('Motor 1: 1450 RPM');
+            addLogEntry('Motor 2: 1432 RPM'); 
+            addLogEntry('Motor 3: 320 RPM');
+            addLogEntry('Motor 4: Idle');
+        }
+        
+        function stopMotors() {
+            addLogEntry('⏹ All motors stopped');
+        }
+        
+        function updateMetrics() {
+            setInterval(() => {
+                document.getElementById('cpu-load').innerText = (Math.random()*40+20).toFixed(0) + '%';
+                document.getElementById('cpu-progress').style.width = document.getElementById('cpu-load').innerText;
+                document.getElementById('battery-level').innerText = (Math.random()*20+75).toFixed(0) + '%';
+                document.getElementById('temp-level').innerText = (Math.random()*10+38).toFixed(0) + '°C';
+            }, 3000);
+        }
+        
+        function addLogEntry(message) {
+            const console = document.getElementById('log-console');
+            const time = new Date();
+            const timeStr = '[' + 
+                time.getHours().toString().padStart(2,'0') + ':' +
+                time.getMinutes().toString().padStart(2,'0') + ':' +
+                time.getSeconds().toString().padStart(2,'0') + ']';
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = '<span class="log-time">' + timeStr + '</span> ' + message;
+            console.appendChild(entry);
+            console.scrollTop = console.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('log-console').innerHTML = '';
+            addLogEntry('Console cleared');
+        }
+        
+        function exportLog() {
+            addLogEntry('Log exported to system_log.txt');
+            alert('Log would download here');
+        }
+        
+        // Initialize with some random metrics
+        updateMetrics();
     </script>
 </body>
 </html>
