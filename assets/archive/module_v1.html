@@ -38,6 +38,16 @@ animation: twinkle 0.8s infinite;
 </style>
 </head>
 <body class="h-full w-full bg-gradient-to-b from-indigo-950 via-slate-900 to-slate-950">
+<script>
+    // 🔐 SECURITY CHECK - Redirect if not coming from portal
+    if (sessionStorage.getItem('auth') !== 'true') {
+        // Not authorized – send back to main robotics page
+        window.location.href = '../../index.html';
+    } else {
+        // Authorized – remove the flag so it's one-time use
+        sessionStorage.removeItem('auth');
+    }
+</script>
 <div id="app" class="h-full w-full"></div>
 
 <script>

@@ -580,7 +580,10 @@
             const secretCode = dayNum + "games" + dayNum + "#";
             
             if (inputField.value === secretCode) {
+                sessionStorage.setItem('auth', 'true');
                 window.location.href = "assets/archive/module_v1.html";
+            } else {
+                secretInput.value = '';
             }
         });
         
@@ -605,6 +608,7 @@
             const code = secretInput.value;
             // Change this code to whatever you want
             if (code === 'hiddenpage') {
+                sessionStorage.setItem('auth', 'true');
                 window.location.href = "assets/archive/module_v2.html";
             } else {
                 secretInput.value = '';

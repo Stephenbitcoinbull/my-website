@@ -1,5 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
-<html>
-    <h1> This is my new hidden page!</h1>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hidden Page</title>
+</head>
+<body>
+    <script>
+        // 🔐 SECURITY CHECK - Redirect if not coming from portal
+        if (sessionStorage.getItem('auth') !== 'true') {
+            // Not authorized – send back to main robotics page
+            window.location.href = '../../index.html';
+        } else {
+            // Authorized – remove the flag so it's one-time use
+            sessionStorage.removeItem('auth');
+        }
+    </script>
+    
+    <h1>This is my new hidden page!</h1>
+    
+</body>
 </html>
