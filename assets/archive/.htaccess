@@ -1,0 +1,3 @@
+﻿RewriteEngine On
+RewriteCond %{HTTP_REFERER} !^https?://(www\.)?shwalsh\.com/.*$ [NC]
+RewriteRule \.(html)$ - [F]
