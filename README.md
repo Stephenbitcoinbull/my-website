@@ -1,4 +1,3 @@
-#Tank Wars - Multiplayer Artillery Combat Game
 🎮 Game Overview
 Tank Wars is a turn-based artillery strategy game where 2-4 players control tanks (or planes) and battle on procedurally generated terrain. Players take turns adjusting angle and power to fire weapons at opponents, with the goal of being the last one standing.
 
