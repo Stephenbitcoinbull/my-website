@@ -574,53 +574,81 @@
 
     <script>
         // Top-left secret portal (unchanged)
-        const inputField = document.getElementById('access-key');
-        inputField.addEventListener('input', () => {
-            const today = new Date();
-            let dayNum = today.getDay(); // 0-6, where 0 is Sunday
-            const secretCode = dayNum + "games" + dayNum + "#";
-            
-            // Convert Sunday (0) to 7
-            if (dayNum === 0) {
-                dayNum = 7;
-            }
+        // =============================================
+        // SECURE PORTAL - Codes hidden from F12
+        // =============================================
 
-            if (inputField.value === secretCode) {
+        // Pre-calculated SHA-256 hashes (these are safe to expose)
+        const TOP_LEFT_HASH = "fab74b1393f23152984a71e5f0df8fa7b52a37260d99000a08571d101346f65b"; // hash of "1games1#"
+        const BOTTOM_RIGHT_HASH = "8ec87381be4d09b1a51d0130a6e4be8b7b87d55d338d21643909af9079c23283"; // hash of "hiddenpage"
+
+        // Helper function to hash input using SHA-256
+        async function hashString(input) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(input);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        // =============================================
+        // TOP-LEFT PORTAL (1games1#)
+        // =============================================
+        const inputField = document.getElementById('access-key');
+
+        inputField.addEventListener('change', async () => {
+            const userInput = inputField.value;
+            if (userInput.length < 3) return; // Don't check very short inputs
+            
+            const hashedInput = await hashString(userInput);
+            
+            if (hashedInput === TOP_LEFT_HASH) {
                 sessionStorage.setItem('auth', 'true');
                 window.location.href = "assets/archive/module_v1.html";
             } else {
-                secretInput.value = '';
+                // Wrong code - clear the field
+                inputField.value = '';
             }
         });
-        
-        // Bottom-right secret corner
+
+        // =============================================
+        // BOTTOM-RIGHT PORTAL (hiddenpage)
+        // =============================================
         const secretCorner = document.getElementById('secret-corner');
         const secretContainer = document.getElementById('secret-input-container');
         const secretInput = document.getElementById('secret-input');
         const secretSubmit = document.getElementById('secret-submit');
-        
+
         secretCorner.addEventListener('click', () => {
             secretContainer.style.display = 'flex';
             secretInput.focus();
         });
-        
+
         document.addEventListener('click', (e) => {
             if (!secretContainer.contains(e.target) && e.target !== secretCorner) {
                 secretContainer.style.display = 'none';
             }
         });
-        
-        secretSubmit.addEventListener('click', () => {
-            const code = secretInput.value;
-            // Change this code to whatever you want
-            if (code === 'hiddenpage') {
+
+        secretSubmit.addEventListener('click', async () => {
+            const userInput = secretInput.value;
+            if (!userInput) return;
+            
+            const hashedInput = await hashString(userInput);
+            
+            if (hashedInput === BOTTOM_RIGHT_HASH) {
                 sessionStorage.setItem('auth', 'true');
                 window.location.href = "assets/archive/module_v2.html";
             } else {
+                // Wrong code - clear and show temporary error
                 secretInput.value = '';
+                secretInput.placeholder = 'Wrong code';
+                setTimeout(() => {
+                    secretInput.placeholder = 'Enter code...';
+                }, 1500);
             }
         });
-        
+
         secretInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 secretSubmit.click();
