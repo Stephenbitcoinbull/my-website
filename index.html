@@ -22,7 +22,7 @@
             color: #333; 
         }
         
-        /* The Stealth Entrance (top-left) */
+        /* (top-left) */
         #dev-portal { 
             position: absolute; 
             top: 10px; 
@@ -44,8 +44,8 @@
             outline: none; 
         }
         
-        /* Secret pathway in bottom-right corner */
-        #secret-corner {
+        /* bottom-right corner */
+        #right-corner {
             position: fixed;
             bottom: 10px;
             right: 10px;
@@ -64,7 +64,7 @@
             font-size: 12px;
             color: #666;
         }
-        #secret-corner:hover {
+        #right-corner:hover {
             opacity: 0.5;
             background: rgba(255,255,255,0.3);
         }
@@ -348,13 +348,13 @@
 </head>
 <body>
 
-    <!-- Top-left secret portal (unchanged) -->
+    <!-- Top-left portal-->
     <div id="dev-portal">
         <input type="text" id="access-key" placeholder="Sys_ID...">
     </div>
     
-    <!-- New bottom-right secret corner -->
-    <div id="secret-corner">⚙️</div>
+    <!-- Bottom-right corner -->
+    <div id="right-corner">⚙️</div>
     <div id="secret-input-container">
         <input type="text" id="secret-input" placeholder="Enter code...">
         <button id="secret-submit">→</button>
@@ -573,14 +573,8 @@
     </footer>
 
     <script>
-        // Top-left secret portal (unchanged)
-        // =============================================
-        // SECURE PORTAL - Codes hidden from F12
-        // =============================================
-
-        // Pre-calculated SHA-256 hashes (these are safe to expose)
-        const TOP_LEFT_HASH = "fab74b1393f23152984a71e5f0df8fa7b52a37260d99000a08571d101346f65b"; // hash of "1games1#"
-        const BOTTOM_RIGHT_HASH = "8ec87381be4d09b1a51d0130a6e4be8b7b87d55d338d21643909af9079c23283"; // hash of "hiddenpage"
+        const TOP_LEFT_HASH = "fab74b1393f23152984a71e5f0df8fa7b52a37260d99000a08571d101346f65b"; 
+        const BOTTOM_RIGHT_HASH = "8ec87381be4d09b1a51d0130a6e4be8b7b87d55d338d21643909af9079c23283"; 
 
         // Helper function to hash input using SHA-256
         async function hashString(input) {
@@ -591,14 +585,11 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        // =============================================
-        // TOP-LEFT PORTAL (1games1#)
-        // =============================================
         const inputField = document.getElementById('access-key');
 
         inputField.addEventListener('change', async () => {
             const userInput = inputField.value;
-            if (userInput.length < 3) return; // Don't check very short inputs
+            if (userInput.length < 3) return; 
             
             const hashedInput = await hashString(userInput);
             
@@ -611,10 +602,8 @@
             }
         });
 
-        // =============================================
-        // BOTTOM-RIGHT PORTAL (hiddenpage)
-        // =============================================
-        const secretCorner = document.getElementById('secret-corner');
+        
+        const secretCorner = document.getElementById('right-corner');
         const secretContainer = document.getElementById('secret-input-container');
         const secretInput = document.getElementById('secret-input');
         const secretSubmit = document.getElementById('secret-submit');
@@ -655,7 +644,7 @@
             }
         });
         
-        // Interactive functions to make the site feel real
+        // Interactive functions
         function startSimulation() {
             addLogEntry('Simulation started');
             updateMetrics();
@@ -689,7 +678,7 @@
         
         function refreshSensors() {
             addLogEntry('Refreshing sensor data...');
-            // Update some random values to make it look real
+            
             document.getElementById('gyro-data').innerText = (Math.random()*0.5).toFixed(1) + ' / ' + (Math.random()*0.3-0.15).toFixed(1) + ' / 9.8';
             document.getElementById('accel-data').innerText = (0.98 + Math.random()*0.04).toFixed(2) + 'g / ' + (Math.random()*0.05).toFixed(2) + 'g / ' + (Math.random()*0.05).toFixed(2) + 'g';
         }
@@ -766,7 +755,7 @@
             alert('Log would download here');
         }
         
-        // Initialize with some random metrics
+        // Initialize with some metrics
         updateMetrics();
     </script>
 </body>
