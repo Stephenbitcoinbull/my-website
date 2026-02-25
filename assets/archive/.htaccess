@@ -1,7 +1,8 @@
-<FilesMatch "\.(html)$">
-    Order Allow,Deny
-    Allow from env=shwalsh
-    Deny from all
-</FilesMatch>
+RewriteEngine On
 
+# Set environment variable if referer matches your domain
 SetEnvIf Referer "shwalsh\.com" shwalsh
+
+# Block access to HTML files UNLESS the environment variable is set
+RewriteCond %{ENV:shwalsh} !true
+RewriteRule \.html$ - [F,L]
