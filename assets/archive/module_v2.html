@@ -382,7 +382,7 @@
     <!-- MAIN APP CARD (hidden until login) -->
     <div id="appCard">
         <div class="app-header">
-            <h1>VMSS</h1>
+            <h1>VMSN</h1>
             <p>Villa Maria </p>
         </div>
         <div class="tabs">
@@ -487,7 +487,7 @@
         // --- Sign up (no Supabase Auth) ---
         window.handleSignup = async function() {
             // Prevents user from creating too many accounts too quickly
-            const signupKey = 'vmss_last_signup';
+            const signupKey = 'vmsn_last_signup';
             const lastSignup = localStorage.getItem(signupKey);
             const now = Date.now();
 
@@ -538,7 +538,7 @@
 
             // Store user in memory (no Supabase Auth session)
             currentUser = newUser;
-            localStorage.setItem('vmss_user', JSON.stringify(newUser));
+            localStorage.setItem('vmsn_user', JSON.stringify(newUser));
             showApp();
         };
 
@@ -573,7 +573,7 @@
 
             // Store user in memory (no Supabase Auth session)
             currentUser = user;
-            localStorage.setItem('vmss_user', JSON.stringify(user));
+            localStorage.setItem('vmsn_user', JSON.stringify(user));
             showApp();
         };
 
@@ -792,7 +792,7 @@
         window.logout = async function() {
             currentUser = null;
             selectedContact = null;
-            localStorage.removeItem('vmss_user');
+            localStorage.removeItem('vmsn_user');
             authCard.style.display = 'block';
             appCard.style.display = 'none';
             usernameInput.value = '';
@@ -802,13 +802,13 @@
 
         // --- Check for existing session from localStorage ---
         (async function init() {
-            const savedUser = localStorage.getItem('vmss_user');
+            const savedUser = localStorage.getItem('vmsn_user');
             if (savedUser) {
                 try {
                     currentUser = JSON.parse(savedUser);
                     showApp();
                 } catch (e) {
-                    localStorage.removeItem('vmss_user');
+                    localStorage.removeItem('vmsn_user');
                 }
             }
         })();
