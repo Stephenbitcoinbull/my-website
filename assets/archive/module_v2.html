@@ -2,145 +2,501 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Mesh · vintage network</title>
+    <title>VMSN</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
     <style>
-        body { font-family: 'Courier New', monospace; max-width: 700px; margin: 40px auto; padding: 20px; background: #e6e6e6; color: #222; }
-        .card { background: #fff; border: 3px solid #aaa; padding: 20px; margin: 20px 0; box-shadow: 8px 8px 0 #888; }
-        input, button { font-family: 'Courier New', monospace; padding: 8px; margin: 4px; width: 100%; box-sizing: border-box; background: #f0f0f0; border: 2px solid #888; }
-        button { background: #c0c0c0; cursor: pointer; font-weight: bold; }
-        button:hover { background: #a0a0a0; }
-        .code { background: #f4f4f4; padding: 12px; border: 2px dashed #666; font-size: 1.5rem; word-break: break-all; text-align: center; }
-        .error { color: #a00; }
-        .success { color: #080; }
-        hr { border: 1px solid #aaa; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #f5f7fb;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        /* Auth card */
+        #authCard {
+            max-width: 400px;
+            width: 100%;
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+        }
+
+        #authCard h2 {
+            font-weight: 600;
+            font-size: 28px;
+            margin-bottom: 8px;
+            color: #1e293b;
+        }
+
+        #authCard p {
+            color: #64748b;
+            margin-bottom: 24px;
+        }
+
+        #authCard input {
+            width: 100%;
+            padding: 14px 16px;
+            margin-bottom: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: 0.2s;
+        }
+
+        #authCard input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin: 8px 0 16px;
+        }
+
+        .button-group button {
+            flex: 1;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .button-group button:first-child {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .button-group button:first-child:hover {
+            background: #2563eb;
+        }
+
+        .button-group button:last-child {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .button-group button:last-child:hover {
+            background: #cbd5e1;
+        }
+
+        #authMessage {
+            font-size: 14px;
+            min-height: 20px;
+        }
+        .error { color: #ef4444; }
+        .success { color: #10b981; }
+
+        /* Main app */
+        #appCard {
+            max-width: 900px;
+            width: 100%;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            overflow: hidden;
+            display: none;
+        }
+
+        /* Header */
+        .app-header {
+            background: #ffffff;
+            border-bottom: 1px solid #eef2f6;
+            padding: 20px 28px;
+        }
+        .app-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: -0.5px;
+        }
+        .app-header p {
+            color: #64748b;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 0 20px;
+        }
+        .tab {
+            padding: 16px 24px;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: 0.2s;
+        }
+        .tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        /* Tab content */
+        .tab-content {
+            padding: 28px;
+            min-height: 500px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        /* Profile tab */
+        .profile-info {
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .profile-info p {
+            margin: 12px 0;
+            font-size: 16px;
+        }
+        .profile-info strong {
+            color: #1e293b;
+            width: 100px;
+            display: inline-block;
+        }
+        .code-box {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-family: monospace;
+            font-size: 18px;
+            display: inline-block;
+            margin-top: 4px;
+        }
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+            margin-top: 16px;
+        }
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+
+        /* Contacts list in Chats tab */
+        .contacts-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .contact-item {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1px solid transparent;
+        }
+        .contact-item:hover {
+            background: #f1f5f9;
+        }
+        .contact-item.selected {
+            border-color: #3b82f6;
+            background: #eff6ff;
+        }
+        .contact-alias {
+            font-weight: 600;
+            font-size: 18px;
+            color: #0f172a;
+        }
+        .contact-code {
+            color: #64748b;
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        /* Message thread */
+        .message-thread {
+            margin-top: 24px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
+        }
+        .messages-container {
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 8px;
+            background: #f8fafc;
+            border-radius: 20px;
+            margin-bottom: 16px;
+        }
+        .message {
+            margin: 12px 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .message.sent {
+            align-items: flex-end;
+        }
+        .message.received {
+            align-items: flex-start;
+        }
+        .message-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 20px;
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            font-size: 15px;
+            line-height: 1.4;
+        }
+        .message.sent .message-bubble {
+            background: #3b82f6;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .message.received .message-bubble {
+            background: white;
+            border-bottom-left-radius: 4px;
+        }
+        .message-time {
+            font-size: 11px;
+            color: #94a3b8;
+            margin-top: 4px;
+            margin-left: 8px;
+            margin-right: 8px;
+        }
+
+        /* Message input */
+        .message-input-area {
+            display: flex;
+            gap: 12px;
+        }
+        .message-input-area textarea {
+            flex: 1;
+            padding: 14px 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 24px;
+            font-family: inherit;
+            font-size: 15px;
+            resize: none;
+            outline: none;
+        }
+        .message-input-area textarea:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        .send-btn {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 0 28px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .send-btn:hover {
+            background: #2563eb;
+        }
+
+        /* Add contact tab */
+        .add-contact-form {
+            max-width: 400px;
+            margin: 0 auto;
+            background: #f8fafc;
+            border-radius: 24px;
+            padding: 32px;
+        }
+        .add-contact-form input {
+            width: 100%;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            font-size: 16px;
+        }
+        .add-contact-form button {
+            width: 100%;
+            padding: 16px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .add-contact-form button:hover {
+            background: #2563eb;
+        }
+        #addContactMessage {
+            margin-top: 16px;
+            text-align: center;
+        }
+
+        /* Empty states */
+        .empty-state {
+            color: #94a3b8;
+            text-align: center;
+            padding: 40px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
-    <h1>🔮 MESH · v0.1</h1>
-    <p>vintage peer network · no email · no recovery</p>
-
     <!-- AUTH CARD -->
-    <div id="authCard" class="card">
-        <h2>⌨️ enter the mesh</h2>
-        <input type="text" id="usernameInput" placeholder="username" autocomplete="off" />
-        <input type="password" id="passwordInput" placeholder="password" />
-        <div style="display: flex; gap: 8px;">
-            <button onclick="handleSignup()">sign up</button>
-            <button onclick="handleLogin()">log in</button>
+    <div id="authCard">
+        <h2>VMSN</h2>
+        <p>Villa Maria</p>
+        <input type="text" id="usernameInput" placeholder="Username" autocomplete="off">
+        <input type="password" id="passwordInput" placeholder="Password">
+        <div class="button-group">
+            <button onclick="handleSignup()">Sign up</button>
+            <button onclick="handleLogin()">Log in</button>
         </div>
         <div id="authMessage"></div>
     </div>
 
-    <!-- PROFILE CARD (shown after login) -->
-    <div id="profileCard" class="card" style="display: none;">
-        <h2>👤 <span id="displayUsername"></span></h2>
-        <p><strong>your public code</strong></p>
-        <div class="code" id="displayPublicCode"></div>
-        <p style="font-size: 0.9rem;">share this code — it’s your address</p>
-        <hr />
-        <h3>➕ add contact</h3>
-        <input type="text" id="contactCodeInput" placeholder="friend's public code" />
-        <input type="text" id="contactAliasInput" placeholder="alias (e.g. 'alice')" />
-        <button onclick="addContact()">add contact</button>
-        <div id="contactMessage"></div>
-
-        <h3 style="margin-top: 24px;">📇 your contacts</h3>
-        <ul id="contactsList"></ul>
-
-        <h3 style="margin-top: 24px;">💬 messages</h3>
-        <div id="messageArea"></div>
-
-        <button onclick="logout()" style="margin-top: 24px; background: #a0a0a0;">🚪 logout</button>
+    <!-- MAIN APP CARD (hidden until login) -->
+    <div id="appCard">
+        <div class="app-header">
+            <h1>VMSS</h1>
+            <p>Villa Maria </p>
+        </div>
+        <div class="tabs">
+            <div class="tab active" data-tab="profile" onclick="switchTab('profile')">Profile</div>
+            <div class="tab" data-tab="chats" onclick="switchTab('chats')">Chats</div>
+            <div class="tab" data-tab="add" onclick="switchTab('add')">Add Contact</div>
+        </div>
+        <div id="tabContent" class="tab-content">
+            <!-- Profile tab content (default) -->
+            <div id="profileTab" style="display: block;">
+                <div class="profile-info">
+                    <p><strong>Username</strong> <span id="displayUsername"></span></p>
+                    <p><strong>Your code</strong></p>
+                    <div class="code-box" id="displayPublicCode"></div>
+                </div>
+                <button class="logout-btn" onclick="logout()">Sign out</button>
+            </div>
+            <!-- Chats tab content (hidden initially) -->
+            <div id="chatsTab" style="display: none;">
+                <div id="contactsContainer">
+                    <!-- Contacts list will be injected here -->
+                </div>
+                <div id="chatArea" style="margin-top: 24px; display: none;">
+                    <div id="messagesContainer" class="messages-container"></div>
+                    <div class="message-input-area">
+                        <textarea id="messageInput" rows="1" placeholder="Type a message..."></textarea>
+                        <button class="send-btn" onclick="sendMessage()">Send</button>
+                    </div>
+                </div>
+            </div>
+            <!-- Add Contact tab content -->
+            <div id="addTab" style="display: none;">
+                <div class="add-contact-form">
+                    <input type="text" id="contactCodeInput" placeholder="Friend's public code">
+                    <input type="text" id="contactAliasInput" placeholder="Alias (e.g. Stephen)">
+                    <button onclick="addContact()">Add Contact</button>
+                    <div id="addContactMessage"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script>
-        // --- Supabase setup ---
+            <script>
+        // --- Supabase setup (only for database, NOT for auth) ---
         const SUPABASE_URL = "https://zctzutsfflmasotxsqge.supabase.co";
         const SUPABASE_ANON_KEY = "sb_publishable_bxKVB0rjBnFO0H82I6EhUw_nEPnU7qT";
-        // Custom storage using cookies (bypasses tracking prevention)
-        const cookieStorage = {
-        getItem: (key) => {
-            return document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'))?.[2] || null;
-        },
-        setItem: (key, value) => {
-            document.cookie = key + '=' + value + '; path=/; max-age=31536000; SameSite=Lax';
-        },
-        removeItem: (key) => {
-            document.cookie = key + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        }
-        };
+        
+        // We're not using Supabase Auth at all - just direct table access
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: {
-            storage: cookieStorage,
-            storageKey: 'mesh_auth',
-            autoRefreshToken: true,
-            persistSession: true,
-            detectSessionInUrl: false
-        }
-        });
-
-        // DOM elements
+        // --- DOM elements ---
         const authCard = document.getElementById('authCard');
-        const profileCard = document.getElementById('profileCard');
+        const appCard = document.getElementById('appCard');
         const usernameInput = document.getElementById('usernameInput');
         const passwordInput = document.getElementById('passwordInput');
         const authMessage = document.getElementById('authMessage');
         const displayUsername = document.getElementById('displayUsername');
         const displayPublicCode = document.getElementById('displayPublicCode');
+        const contactsContainer = document.getElementById('contactsContainer');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const chatArea = document.getElementById('chatArea');
+        const messageInput = document.getElementById('messageInput');
         const contactCodeInput = document.getElementById('contactCodeInput');
         const contactAliasInput = document.getElementById('contactAliasInput');
-        const contactMessage = document.getElementById('contactMessage');
-        const contactsList = document.getElementById('contactsList');
-        const messageArea = document.getElementById('messageArea');
+        const addContactMessage = document.getElementById('addContactMessage');
 
-        // Session storage (simpler than cookies)
         let currentUser = null;
+        let selectedContact = null;
+        let messageSubscription = null;
 
-        // --- helper: hash password with bcrypt (10 rounds) ---
-        async function hashPassword(pw) {
-            // 1. Wait a tiny fraction of a second to ensure the script is parsed
-            await new Promise(resolve => setTimeout(resolve, 500));
-
-            // 2. Look for it specifically in the global window object
-            const hasher = window.bcrypt || (window.dcodeIO ? window.dcodeIO.bcrypt : null);
-            
-            if (!hasher) {
-                console.error("DEBUG: window.bcrypt is", window.bcrypt);
-                console.error("DEBUG: window.dcodeIO is", window.dcodeIO);
-                throw new Error("Library not found. Check your DevTools Network tab.");
+        // --- Tab switching ---
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+            document.getElementById('profileTab').style.display = tab === 'profile' ? 'block' : 'none';
+            document.getElementById('chatsTab').style.display = tab === 'chats' ? 'block' : 'none';
+            document.getElementById('addTab').style.display = tab === 'add' ? 'block' : 'none';
+            if (tab === 'chats') {
+                loadContacts();
             }
+        };
+
+        // --- Helper functions ---
+        async function hashPassword(pw) {
+            await new Promise(r => setTimeout(r, 500));
+            const hasher = window.bcrypt || window.dcodeIO?.bcrypt;
+            if (!hasher) throw new Error("bcrypt not loaded");
             return hasher.hash(pw, 10);
         }
-
-        // --- helper: verify password ---
+        
         async function verifyPassword(pw, hash) {
-            // Check if bcrypt is loaded in any standard way
-            const hasher = window.bcrypt || (window.dcodeIO ? window.dcodeIO.bcrypt : null);
-            
-            if (!hasher) {
-                console.error("DEBUG: window.bcrypt is:", window.bcrypt);
-                alert("Security library failed to load. Please refresh the page.");
-                return false;
-            }
-            
+            const hasher = window.bcrypt || window.dcodeIO?.bcrypt;
+            if (!hasher) return false;
             return hasher.compare(pw, hash);
         }
-
-        // --- generate random 8‑char public code ---
+        
         function generatePublicCode() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let result = '';
-            for (let i = 0; i < 8; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return result;
+            return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
         }
 
-        // --- sign up ---
-        async function handleSignup() {
+        // --- Sign up (no Supabase Auth) ---
+        window.handleSignup = async function() {
+            // Prevents user from creating too many accounts too quickly
+            const signupKey = 'vmss_last_signup';
+            const lastSignup = localStorage.getItem(signupKey);
+            const now = Date.now();
+
+            if (lastSignup && (now - parseInt(lastSignup)) < 120000) { // 120 second cooldown for account creation
+                authMessage.textContent = 'Please wait before creating another account';
+                authMessage.className = 'error';
+                return;
+            }
+            localStorage.setItem(signupKey, now.toString());
             const username = usernameInput.value.trim();
             const password = passwordInput.value.trim();
             if (!username || !password) {
@@ -149,15 +505,14 @@
                 return;
             }
 
-            // Check if username exists
-            const { data: existing, error: checkError } = await supabaseClient
+            const { data: existing } = await supabaseClient
                 .from('users')
                 .select('username')
                 .eq('username', username)
                 .maybeSingle();
 
             if (existing) {
-                authMessage.textContent = 'username taken';
+                authMessage.textContent = 'Username taken!';
                 authMessage.className = 'error';
                 return;
             }
@@ -167,10 +522,10 @@
 
             const { data: newUser, error: insertError } = await supabaseClient
                 .from('users')
-                .insert([{
-                    username: username,
-                    password_hash: hashed,
-                    public_code: publicCode
+                .insert([{ 
+                    username, 
+                    password_hash: hashed, 
+                    public_code: publicCode 
                 }])
                 .select()
                 .single();
@@ -181,13 +536,14 @@
                 return;
             }
 
-            // Auto‑login after signup
+            // Store user in memory (no Supabase Auth session)
             currentUser = newUser;
-            showProfile();
-        }
+            localStorage.setItem('vmss_user', JSON.stringify(newUser));
+            showApp();
+        };
 
-        // --- log in ---
-        async function handleLogin() {
+        // --- Log in (no Supabase Auth) ---
+        window.handleLogin = async function() {
             const username = usernameInput.value.trim();
             const password = passwordInput.value.trim();
             if (!username || !password) {
@@ -196,7 +552,7 @@
                 return;
             }
 
-            const { data: user, error } = await supabaseClient
+            const { data: user, error: userError } = await supabaseClient
                 .from('users')
                 .select('*')
                 .eq('username', username)
@@ -215,131 +571,247 @@
                 return;
             }
 
+            // Store user in memory (no Supabase Auth session)
             currentUser = user;
-            showProfile();
-        }
+            localStorage.setItem('vmss_user', JSON.stringify(user));
+            showApp();
+        };
 
-        // --- show profile UI ---
-        async function showProfile() {
+        // --- Show main app after login ---
+        async function showApp() {
             if (!currentUser) return;
-
+            
             authCard.style.display = 'none';
-            profileCard.style.display = 'block';
-
+            appCard.style.display = 'block';
             displayUsername.textContent = currentUser.username;
             displayPublicCode.textContent = currentUser.public_code;
-
+            switchTab('profile');
             loadContacts();
-            loadMessages();
+            setupRealtime();
         }
 
-        // --- load contacts ---
+        // --- Load contacts ---
         async function loadContacts() {
+            if (!currentUser) return;
+            console.log('Loading contacts for user:', currentUser.id);
+            
             const { data, error } = await supabaseClient
                 .from('contacts')
                 .select('*')
                 .eq('user_id', currentUser.id);
-
-            if (error) return console.error(error);
-
-            contactsList.innerHTML = '';
-            data.forEach(c => {
-                const li = document.createElement('li');
-                li.innerHTML = `<strong>${c.alias || '?'}</strong> · code: ${c.contact_code}`;
-                contactsList.appendChild(li);
-            });
-        }
-
-        // --- add contact ---
-        async function addContact() {
-            const code = contactCodeInput.value.trim();
-            const alias = contactAliasInput.value.trim() || code;
-            if (!code) {
-                contactMessage.textContent = 'enter a public code';
-                contactMessage.className = 'error';
+                
+            if (error) {
+                console.error('Error loading contacts:', error);
+                contactsContainer.innerHTML = '<div class="empty-state">Error loading contacts.</div>';
                 return;
             }
+            
+            console.log('Contacts loaded:', data);
+            
+            if (!data || data.length === 0) {
+                contactsContainer.innerHTML = '<div class="empty-state">No contacts yet. Add some in the "Add Contact" tab.</div>';
+                chatArea.style.display = 'none';
+                return;
+            }
+            
+            let html = '<div class="contacts-list">';
+            data.forEach(c => {
+                const isSelected = selectedContact?.contact_code === c.contact_code;
+                html += `<div class="contact-item ${isSelected ? 'selected' : ''}" onclick="selectContact('${c.contact_code}', '${c.alias || c.contact_code}')">
+                    <span class="contact-alias">${c.alias || '?'}</span>
+                    <span class="contact-code">${c.contact_code}</span>
+                </div>`;
+            });
+            html += '</div>';
+            contactsContainer.innerHTML = html;
+            
+            if (selectedContact && data.some(c => c.contact_code === selectedContact.contact_code)) {
+                chatArea.style.display = 'block';
+                loadMessages();
+            } else {
+                selectedContact = null;
+                chatArea.style.display = 'none';
+            }
+        }
 
+        // --- Select a contact ---
+        window.selectContact = function(code, alias) {
+            selectedContact = { contact_code: code, alias };
+            chatArea.style.display = 'block';
+            loadContacts();
+            loadMessages();
+        };
+
+        // --- Load messages ---
+        async function loadMessages() {
+            if (!selectedContact) return;
+            
+            const { data, error } = await supabaseClient
+                .from('messages')
+                .select('*')
+                .or(`and(from_code.eq.${currentUser.public_code},to_code.eq.${selectedContact.contact_code}),and(from_code.eq.${selectedContact.contact_code},to_code.eq.${currentUser.public_code})`)
+                .order('created_at', { ascending: true });
+                
+            if (error) {
+                console.error('Error loading messages:', error);
+                return;
+            }
+            
+            messagesContainer.innerHTML = '';
+            data.forEach(m => {
+                const isSent = m.from_code === currentUser.public_code;
+                const div = document.createElement('div');
+                div.className = `message ${isSent ? 'sent' : 'received'}`;
+                div.innerHTML = `
+                    <div class="message-bubble">${m.content}</div>
+                    <div class="message-time">${new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                `;
+                messagesContainer.appendChild(div);
+            });
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // --- Send a message ---
+        window.sendMessage = async function() {
+            if (!selectedContact) return;
+            const content = messageInput.value.trim();
+            if (!content) return;
+            
+            const { error } = await supabaseClient.from('messages').insert([{
+                from_code: currentUser.public_code,
+                to_code: selectedContact.contact_code,
+                content
+            }]);
+            
+            if (error) {
+                console.error('Send error:', error);
+                alert('Failed to send: ' + error.message);
+                return;
+            }
+            
+            messageInput.value = '';
+            loadMessages();
+        };
+
+        // --- Add contact ---
+        // --- Add contact (with duplicate prevention) ---
+        window.addContact = async function() {
+            const code = contactCodeInput.value.trim();
+            const alias = contactAliasInput.value.trim() || code;
+            
+            if (!code) {
+                addContactMessage.textContent = 'Enter a code';
+                addContactMessage.className = 'error';
+                return;
+            }
+            
+            // Don't let users add themselves
+            if (code === currentUser.public_code) {
+                addContactMessage.textContent = "You can't add yourself";
+                addContactMessage.className = 'error';
+                return;
+            }
+            
             // Verify the code exists
             const { data: target, error: findError } = await supabaseClient
                 .from('users')
                 .select('public_code')
                 .eq('public_code', code)
                 .maybeSingle();
-
+                
+            if (findError) {
+                console.error('Find user error:', findError);
+                addContactMessage.textContent = 'Error looking up code';
+                addContactMessage.className = 'error';
+                return;
+            }
+            
             if (!target) {
-                contactMessage.textContent = 'no user with that code';
-                contactMessage.className = 'error';
+                addContactMessage.textContent = 'no user with that code';
+                addContactMessage.className = 'error';
                 return;
             }
-
-            const { error: insertError } = await supabaseClient
+            
+            // 🚨 CHECK FOR EXISTING CONTACT BEFORE INSERTING
+            const { data: existingContact, error: checkError } = await supabaseClient
                 .from('contacts')
-                .insert([{
-                    user_id: currentUser.id,
-                    contact_code: code,
-                    alias: alias
-                }]);
-
-            if (insertError) {
-                contactMessage.textContent = 'error adding contact';
-                contactMessage.className = 'error';
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .eq('contact_code', code)
+                .maybeSingle();
+                
+            if (existingContact) {
+                addContactMessage.textContent = 'contact already exists';
+                addContactMessage.className = 'error';
                 return;
             }
-
+            
+            // Insert contact (only if not duplicate)
+            const { error } = await supabaseClient.from('contacts').insert([{
+                user_id: currentUser.id,
+                contact_code: code,
+                alias: alias
+            }]);
+            
+            if (error) {
+                console.error('Insert contact error:', error);
+                addContactMessage.textContent = 'error: ' + error.message;
+                addContactMessage.className = 'error';
+                return;
+            }
+            
             contactCodeInput.value = '';
             contactAliasInput.value = '';
-            contactMessage.textContent = 'contact added';
-            contactMessage.className = 'success';
+            addContactMessage.textContent = 'contact added';
+            addContactMessage.className = 'success';
             loadContacts();
-        }
-
-        // --- load messages (sent/received) ---
-        async function loadMessages() {
-            const { data, error } = await supabaseClient
-                .from('messages')
-                .select('*')
-                .or(`from_code.eq.${currentUser.public_code},to_code.eq.${currentUser.public_code}`)
-                .order('created_at', { ascending: false });
-
-            if (error) return console.error(error);
-
-            messageArea.innerHTML = '';
-            data.forEach(m => {
-                const div = document.createElement('div');
-                div.style.padding = '8px';
-                div.style.borderBottom = '1px solid #ccc';
-                const fromMe = m.from_code === currentUser.public_code;
-                div.innerHTML = `
-                    <strong>${fromMe ? 'you' : m.from_code}</strong> → 
-                    <strong>${m.to_code === currentUser.public_code ? 'you' : m.to_code}</strong><br>
-                    ${m.content}<br>
-                    <small>${new Date(m.created_at).toLocaleString()}</small>
-                `;
-                messageArea.appendChild(div);
-            });
-        }
-
-        // --- send a message (you can wire this to a UI later) ---
-        window.sendMessage = async function(toCode, content) {
-            if (!currentUser) return;
-            await supabaseClient.from('messages').insert([{
-                from_code: currentUser.public_code,
-                to_code: toCode,
-                content: content
-            }]);
-            loadMessages();
+            setTimeout(() => addContactMessage.textContent = '', 2000);
         };
 
-        // --- logout ---
-        async function logout() {
-            currentUser = null;
-            authCard.style.display = 'block';
-            profileCard.style.display = 'none';
-            usernameInput.value = '';
-            passwordInput.value = '';
+        // --- Real-time subscription (optional) ---
+        function setupRealtime() {
+            if (messageSubscription) messageSubscription.unsubscribe();
+            if (!currentUser) return;
+            
+            messageSubscription = supabaseClient
+                .channel('messages')
+                .on('postgres_changes', { 
+                    event: 'INSERT', 
+                    schema: 'public', 
+                    table: 'messages',
+                    filter: `from_code=eq.${currentUser.public_code},to_code=eq.${currentUser.public_code}`
+                }, (payload) => {
+                    if (selectedContact && (payload.new.from_code === selectedContact.contact_code || payload.new.to_code === selectedContact.contact_code)) {
+                        loadMessages();
+                    }
+                })
+                .subscribe();
         }
 
+        // --- Logout ---
+        window.logout = async function() {
+            currentUser = null;
+            selectedContact = null;
+            localStorage.removeItem('vmss_user');
+            authCard.style.display = 'block';
+            appCard.style.display = 'none';
+            usernameInput.value = '';
+            passwordInput.value = '';
+            if (messageSubscription) messageSubscription.unsubscribe();
+        };
+
+        // --- Check for existing session from localStorage ---
+        (async function init() {
+            const savedUser = localStorage.getItem('vmss_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    showApp();
+                } catch (e) {
+                    localStorage.removeItem('vmss_user');
+                }
+            }
+        })();
     </script>
 </body>
 </html>
