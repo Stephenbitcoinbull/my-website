@@ -2,82 +2,344 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Database Test</title>
-    
+    <title>Mesh · vintage network</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+    <style>
+        body { font-family: 'Courier New', monospace; max-width: 700px; margin: 40px auto; padding: 20px; background: #e6e6e6; color: #222; }
+        .card { background: #fff; border: 3px solid #aaa; padding: 20px; margin: 20px 0; box-shadow: 8px 8px 0 #888; }
+        input, button { font-family: 'Courier New', monospace; padding: 8px; margin: 4px; width: 100%; box-sizing: border-box; background: #f0f0f0; border: 2px solid #888; }
+        button { background: #c0c0c0; cursor: pointer; font-weight: bold; }
+        button:hover { background: #a0a0a0; }
+        .code { background: #f4f4f4; padding: 12px; border: 2px dashed #666; font-size: 1.5rem; word-break: break-all; text-align: center; }
+        .error { color: #a00; }
+        .success { color: #080; }
+        hr { border: 1px solid #aaa; }
+    </style>
 </head>
 <body>
-    <h1>Profile Registry</h1>
-    
-    <input type="text" id="newCode" placeholder="Enter new code...">
-    <button onclick="addProfile()">Register</button>
+    <h1>🔮 MESH · v0.1</h1>
+    <p>vintage peer network · no email · no recovery</p>
 
-    <h3>Registered Profiles:</h3>
-    <ul id="userList"></ul>
+    <!-- AUTH CARD -->
+    <div id="authCard" class="card">
+        <h2>⌨️ enter the mesh</h2>
+        <input type="text" id="usernameInput" placeholder="username" autocomplete="off" />
+        <input type="password" id="passwordInput" placeholder="password" />
+        <div style="display: flex; gap: 8px;">
+            <button onclick="handleSignup()">sign up</button>
+            <button onclick="handleLogin()">log in</button>
+        </div>
+        <div id="authMessage"></div>
+    </div>
 
+    <!-- PROFILE CARD (shown after login) -->
+    <div id="profileCard" class="card" style="display: none;">
+        <h2>👤 <span id="displayUsername"></span></h2>
+        <p><strong>your public code</strong></p>
+        <div class="code" id="displayPublicCode"></div>
+        <p style="font-size: 0.9rem;">share this code — it’s your address</p>
+        <hr />
+        <h3>➕ add contact</h3>
+        <input type="text" id="contactCodeInput" placeholder="friend's public code" />
+        <input type="text" id="contactAliasInput" placeholder="alias (e.g. 'alice')" />
+        <button onclick="addContact()">add contact</button>
+        <div id="contactMessage"></div>
+
+        <h3 style="margin-top: 24px;">📇 your contacts</h3>
+        <ul id="contactsList"></ul>
+
+        <h3 style="margin-top: 24px;">💬 messages</h3>
+        <div id="messageArea"></div>
+
+        <button onclick="logout()" style="margin-top: 24px; background: #a0a0a0;">🚪 logout</button>
+    </div>
 
     <script>
-        // 1. CREDENTIALS
-        const _URL = "https://zctzutsfflmasotxsqge.supabase.co"; 
-        const _KEY = "sb_publishable_bxKVB0rjBnFO0H82I6EhUw_nEPnU7qT";
+        // --- Supabase setup ---
+        const SUPABASE_URL = "https://zctzutsfflmasotxsqge.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_bxKVB0rjBnFO0H82I6EhUw_nEPnU7qT";
+        // Custom storage using cookies (bypasses tracking prevention)
+        const cookieStorage = {
+        getItem: (key) => {
+            return document.cookie.match(new RegExp('(^| )' + key + '=([^;]+)'))?.[2] || null;
+        },
+        setItem: (key, value) => {
+            document.cookie = key + '=' + value + '; path=/; max-age=31536000; SameSite=Lax';
+        },
+        removeItem: (key) => {
+            document.cookie = key + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        }
+        };
 
-        // 2. INITIALIZE CLIENT
-        const supabaseClient = supabase.createClient(_URL, _KEY);
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+            storage: cookieStorage,
+            storageKey: 'mesh_auth',
+            autoRefreshToken: true,
+            persistSession: true,
+            detectSessionInUrl: false
+        }
+        });
 
-        // 3. DIAGNOSTIC: Total row count
-        supabaseClient
-            .from('profiles')
-            .select('*', { count: 'exact', head: true })
-            .then(res => console.log("Total rows found:", res.count));
+        // DOM elements
+        const authCard = document.getElementById('authCard');
+        const profileCard = document.getElementById('profileCard');
+        const usernameInput = document.getElementById('usernameInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const authMessage = document.getElementById('authMessage');
+        const displayUsername = document.getElementById('displayUsername');
+        const displayPublicCode = document.getElementById('displayPublicCode');
+        const contactCodeInput = document.getElementById('contactCodeInput');
+        const contactAliasInput = document.getElementById('contactAliasInput');
+        const contactMessage = document.getElementById('contactMessage');
+        const contactsList = document.getElementById('contactsList');
+        const messageArea = document.getElementById('messageArea');
 
-        // 4. MAIN CONNECTION AND RENDER LOGIC
-        async function checkConnection() {
-            console.log("Attempting to connect...");
+        // Session storage (simpler than cookies)
+        let currentUser = null;
+
+        // --- helper: hash password with bcrypt (10 rounds) ---
+        async function hashPassword(pw) {
+            // 1. Wait a tiny fraction of a second to ensure the script is parsed
+            await new Promise(resolve => setTimeout(resolve, 500));
+
+            // 2. Look for it specifically in the global window object
+            const hasher = window.bcrypt || (window.dcodeIO ? window.dcodeIO.bcrypt : null);
             
-            const { data, error } = await supabaseClient.from('profiles').select('*');
-            
-            if (error) {
-                console.error("❌ Connection Error:", error.message);
-            } else {
-                console.log("✅ Database Connected! Data received:", data);
-                
-                // Render the data to the HTML list
-                const list = document.getElementById('userList');
-                list.innerHTML = ""; // Clear existing
-                
-                data.forEach(user => {
-                    const li = document.createElement('li');
-                    
-                    const date = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
-                    li.textContent = `${user.username_code} (Registered: ${date})`;
-                    list.appendChild(li);
-    });
+            if (!hasher) {
+                console.error("DEBUG: window.bcrypt is", window.bcrypt);
+                console.error("DEBUG: window.dcodeIO is", window.dcodeIO);
+                throw new Error("Library not found. Check your DevTools Network tab.");
             }
+            return hasher.hash(pw, 10);
         }
 
-        async function addProfile() {
-            const input = document.getElementById('newCode');
-            const code = input.value.trim(); // Remove extra spaces
+        // --- helper: verify password ---
+        async function verifyPassword(pw, hash) {
+            // Check if bcrypt is loaded in any standard way
+            const hasher = window.bcrypt || (window.dcodeIO ? window.dcodeIO.bcrypt : null);
+            
+            if (!hasher) {
+                console.error("DEBUG: window.bcrypt is:", window.bcrypt);
+                alert("Security library failed to load. Please refresh the page.");
+                return false;
+            }
+            
+            return hasher.compare(pw, hash);
+        }
 
-            if (!code) {
-                alert("Please enter a code!");
+        // --- generate random 8‑char public code ---
+        function generatePublicCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let result = '';
+            for (let i = 0; i < 8; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        // --- sign up ---
+        async function handleSignup() {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            if (!username || !password) {
+                authMessage.textContent = 'fill both fields';
+                authMessage.className = 'error';
                 return;
             }
 
-            const { error } = await supabaseClient
-                .from('profiles')
-                .insert([{ username_code: code }]);
+            // Check if username exists
+            const { data: existing, error: checkError } = await supabaseClient
+                .from('users')
+                .select('username')
+                .eq('username', username)
+                .maybeSingle();
 
-            if (error) {
-                alert("Error: " + error.message);
-            } else {
-                input.value = ""; // Clear the box
-                checkConnection(); // Refresh the list
+            if (existing) {
+                authMessage.textContent = 'username taken';
+                authMessage.className = 'error';
+                return;
             }
+
+            const publicCode = generatePublicCode();
+            const hashed = await hashPassword(password);
+
+            const { data: newUser, error: insertError } = await supabaseClient
+                .from('users')
+                .insert([{
+                    username: username,
+                    password_hash: hashed,
+                    public_code: publicCode
+                }])
+                .select()
+                .single();
+
+            if (insertError) {
+                authMessage.textContent = 'signup failed: ' + insertError.message;
+                authMessage.className = 'error';
+                return;
+            }
+
+            // Auto‑login after signup
+            currentUser = newUser;
+            showProfile();
         }
 
-        // Run the function
-        checkConnection();
+        // --- log in ---
+        async function handleLogin() {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            if (!username || !password) {
+                authMessage.textContent = 'fill both fields';
+                authMessage.className = 'error';
+                return;
+            }
+
+            const { data: user, error } = await supabaseClient
+                .from('users')
+                .select('*')
+                .eq('username', username)
+                .maybeSingle();
+
+            if (!user) {
+                authMessage.textContent = 'user not found';
+                authMessage.className = 'error';
+                return;
+            }
+
+            const valid = await verifyPassword(password, user.password_hash);
+            if (!valid) {
+                authMessage.textContent = 'wrong password';
+                authMessage.className = 'error';
+                return;
+            }
+
+            currentUser = user;
+            showProfile();
+        }
+
+        // --- show profile UI ---
+        async function showProfile() {
+            if (!currentUser) return;
+
+            authCard.style.display = 'none';
+            profileCard.style.display = 'block';
+
+            displayUsername.textContent = currentUser.username;
+            displayPublicCode.textContent = currentUser.public_code;
+
+            loadContacts();
+            loadMessages();
+        }
+
+        // --- load contacts ---
+        async function loadContacts() {
+            const { data, error } = await supabaseClient
+                .from('contacts')
+                .select('*')
+                .eq('user_id', currentUser.id);
+
+            if (error) return console.error(error);
+
+            contactsList.innerHTML = '';
+            data.forEach(c => {
+                const li = document.createElement('li');
+                li.innerHTML = `<strong>${c.alias || '?'}</strong> · code: ${c.contact_code}`;
+                contactsList.appendChild(li);
+            });
+        }
+
+        // --- add contact ---
+        async function addContact() {
+            const code = contactCodeInput.value.trim();
+            const alias = contactAliasInput.value.trim() || code;
+            if (!code) {
+                contactMessage.textContent = 'enter a public code';
+                contactMessage.className = 'error';
+                return;
+            }
+
+            // Verify the code exists
+            const { data: target, error: findError } = await supabaseClient
+                .from('users')
+                .select('public_code')
+                .eq('public_code', code)
+                .maybeSingle();
+
+            if (!target) {
+                contactMessage.textContent = 'no user with that code';
+                contactMessage.className = 'error';
+                return;
+            }
+
+            const { error: insertError } = await supabaseClient
+                .from('contacts')
+                .insert([{
+                    user_id: currentUser.id,
+                    contact_code: code,
+                    alias: alias
+                }]);
+
+            if (insertError) {
+                contactMessage.textContent = 'error adding contact';
+                contactMessage.className = 'error';
+                return;
+            }
+
+            contactCodeInput.value = '';
+            contactAliasInput.value = '';
+            contactMessage.textContent = 'contact added';
+            contactMessage.className = 'success';
+            loadContacts();
+        }
+
+        // --- load messages (sent/received) ---
+        async function loadMessages() {
+            const { data, error } = await supabaseClient
+                .from('messages')
+                .select('*')
+                .or(`from_code.eq.${currentUser.public_code},to_code.eq.${currentUser.public_code}`)
+                .order('created_at', { ascending: false });
+
+            if (error) return console.error(error);
+
+            messageArea.innerHTML = '';
+            data.forEach(m => {
+                const div = document.createElement('div');
+                div.style.padding = '8px';
+                div.style.borderBottom = '1px solid #ccc';
+                const fromMe = m.from_code === currentUser.public_code;
+                div.innerHTML = `
+                    <strong>${fromMe ? 'you' : m.from_code}</strong> → 
+                    <strong>${m.to_code === currentUser.public_code ? 'you' : m.to_code}</strong><br>
+                    ${m.content}<br>
+                    <small>${new Date(m.created_at).toLocaleString()}</small>
+                `;
+                messageArea.appendChild(div);
+            });
+        }
+
+        // --- send a message (you can wire this to a UI later) ---
+        window.sendMessage = async function(toCode, content) {
+            if (!currentUser) return;
+            await supabaseClient.from('messages').insert([{
+                from_code: currentUser.public_code,
+                to_code: toCode,
+                content: content
+            }]);
+            loadMessages();
+        };
+
+        // --- logout ---
+        async function logout() {
+            currentUser = null;
+            authCard.style.display = 'block';
+            profileCard.style.display = 'none';
+            usernameInput.value = '';
+            passwordInput.value = '';
+        }
+
     </script>
 </body>
 </html>
