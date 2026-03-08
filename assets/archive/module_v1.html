@@ -61,7 +61,7 @@ let gameState = { phase: 'setup', players: [], currentPlayerIndex: 0,
 round: 1, terrain: null, terrainCtx: null, projectile: null, canFire: true,
 shopOpen: false, explosions: [], planes: [],
 bombs: [], beamLine: null, flameColumn: null, trajectoryPoints: [], hasTargeting: false,
-empDisabledPlayers: new Set(), tmp360AimTurns: 0
+empDisabledPlayers: new Set(), tmp360AimTurns: 0, cycleCount: 0
 };
 
 const TANK_WIDTH = 24; const TANK_HEIGHT = 14; const CANVAS_WIDTH = 1200; const CANVAS_HEIGHT = 600;
@@ -69,7 +69,7 @@ const TANK_WIDTH = 24; const TANK_HEIGHT = 14; const CANVAS_WIDTH = 1200; const 
 const ANGLE_INCREMENT = 4;
 const POWER_INCREMENT = 7;
 
-const DEV_MODE = false;
+const DEV_MODE = true;
 
 const COLORS = {
 red: { primary: '#ef4444', dark: '#b91c1c', light: '#fca5a5', glow: '#dc2626' }, 
@@ -320,6 +320,11 @@ window.tankWars = {
             player.shield = true;
             break;
         case 'targeting':
+            if (player.weapons.includes('sniper')) {
+                alert('Cannot use targeting with sniper.');
+                player.money += price; // refund
+                return;
+            }
             gameState.hasTargeting = true;
             break;
         case 'luckybox1':
@@ -595,7 +600,7 @@ window.tankWars = {
                 if (target.shield) {
                     target.shield = false;
                     damage = 0;
-                    let moneyReward = 75;
+                    moneyReward = 75;
                 }
                 if (damage > 0 && !target.shield) {
                     target.health -= damage;
@@ -705,7 +710,7 @@ window.tankWars = {
                     if (player.shield) {
                         player.shield = false;
                         damage = 0;
-                        let moneyReward = 75;
+                        moneyReward = 75;
                     } else {
                         damage = weapon.damage;
                         moneyReward = 200;
@@ -733,7 +738,7 @@ window.tankWars = {
                     if (player.health <= 0) {
                         player.health = 0;
                         player.alive = false;
-                        if (owner) owner.money += 400;
+                        if (owner) owner.money += 150;
                     }
                 }
 
@@ -941,6 +946,20 @@ window.tankWars = {
             currentPlayer.tmp360AimTurns--;
         }
 
+        // Find the index of the last alive player (highest index among alive players)
+        let lastAliveIdx = -1;
+        for (let i = gameState.players.length - 1; i >= 0; i--) {
+            if (gameState.players[i].alive) {
+                lastAliveIdx = i;
+                break;
+            }
+        }
+
+        // If the current player was the last alive, a full cycle just ended
+        if (gameState.currentPlayerIndex === lastAliveIdx) {
+            gameState.cycleCount = (gameState.cycleCount || 0) + 1;
+        }
+
         // Find next alive player
         let nextIndex = gameState.currentPlayerIndex;
         let attempts = 0;
@@ -973,7 +992,8 @@ window.tankWars = {
             trajectoryPoints: [],
             hasTargeting: false,
             empDisabledPlayers: new Set(),
-            tmp360AimTurns: 0
+            tmp360AimTurns: 0,
+            cycleCount: 0
         };
         this.selectedColors = new Set();
         render();
@@ -1386,7 +1406,7 @@ ${currentPlayer.isPlane ? 'border-2 border-lime-400 bg-blue-700' : 'bg-blue-700/
 <button onclick="window.tankWars.buyItem('health')" class="px-2 py-2 bg-green-600/80 hover:bg-green-600 rounded-lg text-white text-xs font-bold border border-green-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
 ${currentPlayer.money < 75 || (currentPlayer.isPlane ? currentPlayer.planeHealth >= 100 : currentPlayer.health >= 100) ? 'disabled' : ''}>❤+30<br>$75</button>
 <button onclick="window.tankWars.buyItem('shield')" class="px-2 py-2 bg-cyan-600/80 hover:bg-cyan-600 rounded-lg text-white text-xs font-bold border border-cyan-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-${currentPlayer.money < 150 || currentPlayer.shield || currentPlayer.empDisabled ? 'disabled' : ''}>🛡 SHIELD<br>$150</button>
+${currentPlayer.money < 150 || currentPlayer.shield || currentPlayer.empDisabled || gameState.cycleCount < 3 ? 'disabled' : ''}>🛡 SHIELD<br>$150</button>
 <button onclick="window.tankWars.buyItem('360aim')" class="px-2 py-2
 bg-pink-600/80 hover:bg-pink-600 rounded-lg text-white text-xs font-bold border border-pink-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed" ${currentPlayer.money < 150 ? 'disabled' : ''}>🎯 360°<br>$150</button>
 <button onclick="window.tankWars.buyItem('targeting')" class="px-2 py-2 bg-indigo-600/80 hover:bg-indigo-600 rounded-lg text-white text-xs font-bold border border-indigo-500 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
@@ -2030,3 +2050,4 @@ document.addEventListener('keydown', (e) => {
 
 render();
 </script>
+
