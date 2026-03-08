@@ -217,6 +217,7 @@
             cursor: pointer;
             transition: 0.2s;
             border: 1px solid transparent;
+            position: relative;
         }
         .contact-item:hover {
             background: #f1f5f9;
@@ -225,25 +226,23 @@
             border-color: #3b82f6;
             background: #eff6ff;
         }
-        .contact-item {
-            position: relative;
-        }
         .unread-badge {
             position: absolute;
-            right: 16px;
+            right: 85px;
             top: 50%;
             transform: translateY(-50%);
             background: #ef4444;
             color: white;
             border-radius: 999px;
-            min-width: 20px;
-            height: 20px;
-            padding: 0 6px;
-            font-size: 12px;
+            min-width: 24px;        
+            height: 24px;
+            padding: 0 8px;
+            font-size: 14px;
             font-weight: 600;
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         .contact-alias {
             font-weight: 600;
@@ -257,11 +256,6 @@
         }
 
         /* Message thread */
-        .message-thread {
-            margin-top: 24px;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 20px;
-        }
         .messages-container {
             max-height: 300px;
             overflow-y: auto;
@@ -383,6 +377,54 @@
             padding: 40px;
             font-style: italic;
         }
+
+        /* Friend requests list */
+        .requests-list {
+            margin-top: 16px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 16px;
+        }
+        .request-item {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #e2e8f0;
+        }
+        .request-item button {
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+        .request-item button:first-of-type {
+            background: #10b981;
+            color: white;
+        }
+        .request-item button:last-of-type {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* Loading spinner (optional) */
+        .loading-spinner {
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #3b82f6;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body>
@@ -403,7 +445,7 @@
     <div id="appCard">
         <div class="app-header">
             <h1>VMSN</h1>
-            <p>Villa Maria </p>
+            <p>Villa Maria</p>
         </div>
         <div class="tabs">
             <div class="tab active" data-tab="profile" onclick="switchTab('profile')">Profile</div>
@@ -411,7 +453,7 @@
             <div class="tab" data-tab="add" onclick="switchTab('add')">Add Contact</div>
         </div>
         <div id="tabContent" class="tab-content">
-            <!-- Profile tab content (default) -->
+            <!-- Profile tab -->
             <div id="profileTab" style="display: block;">
                 <div class="profile-info">
                     <p><strong>Username</strong> <span id="displayUsername"></span></p>
@@ -420,7 +462,7 @@
                 </div>
                 <button class="logout-btn" onclick="logout()">Sign out</button>
             </div>
-            <!-- Chats tab content (hidden initially) -->
+            <!-- Chats tab -->
             <div id="chatsTab" style="display: none;">
                 <div id="contactsContainer">
                     <!-- Contacts list will be injected here -->
@@ -433,446 +475,598 @@
                     </div>
                 </div>
             </div>
-            <!-- Add Contact tab content -->
+            <!-- Add Contact tab -->
             <div id="addTab" style="display: none;">
                 <div class="add-contact-form">
                     <input type="text" id="contactCodeInput" placeholder="Friend's public code">
                     <input type="text" id="contactAliasInput" placeholder="Alias (e.g. Stephen)">
-                    <button onclick="addContact()">Add Contact</button>
+                    <button onclick="sendFriendRequest()">Send Friend Request</button>
                     <div id="addContactMessage"></div>
+                    <!-- Friend requests list -->
+                    <div id="requestsContainer" style="margin-top: 24px;"></div>
                 </div>
             </div>
         </div>
     </div>
 
-        <script>
-    // --- Supabase setup (only for database, NOT for auth) ---
-    const SUPABASE_URL = "https://zctzutsfflmasotxsqge.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_bxKVB0rjBnFO0H82I6EhUw_nEPnU7qT";
+    <script>
+        // --- Supabase setup ---
+        const SUPABASE_URL = "https://zctzutsfflmasotxsqge.supabase.co";
+        const SUPABASE_ANON_KEY = "sb_publishable_bxKVB0rjBnFO0H82I6EhUw_nEPnU7qT";
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // --- DOM elements ---
+        const authCard = document.getElementById('authCard');
+        const appCard = document.getElementById('appCard');
+        const usernameInput = document.getElementById('usernameInput');
+        const passwordInput = document.getElementById('passwordInput');
+        const authMessage = document.getElementById('authMessage');
+        const displayUsername = document.getElementById('displayUsername');
+        const displayPublicCode = document.getElementById('displayPublicCode');
+        const contactsContainer = document.getElementById('contactsContainer');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const chatArea = document.getElementById('chatArea');
+        const messageInput = document.getElementById('messageInput');
+        const contactCodeInput = document.getElementById('contactCodeInput');
+        const contactAliasInput = document.getElementById('contactAliasInput');
+        const addContactMessage = document.getElementById('addContactMessage');
+        const requestsContainer = document.getElementById('requestsContainer');
 
-    // --- DOM elements ---
-    const authCard = document.getElementById('authCard');
-    const appCard = document.getElementById('appCard');
-    const usernameInput = document.getElementById('usernameInput');
-    const passwordInput = document.getElementById('passwordInput');
-    const authMessage = document.getElementById('authMessage');
-    const displayUsername = document.getElementById('displayUsername');
-    const displayPublicCode = document.getElementById('displayPublicCode');
-    const contactsContainer = document.getElementById('contactsContainer');
-    const messagesContainer = document.getElementById('messagesContainer');
-    const chatArea = document.getElementById('chatArea');
-    const messageInput = document.getElementById('messageInput');
-    const contactCodeInput = document.getElementById('contactCodeInput');
-    const contactAliasInput = document.getElementById('contactAliasInput');
-    const addContactMessage = document.getElementById('addContactMessage');
+        let currentUser = null;
+        let selectedContact = null;
+        let messageSubscription = null;
+        let requestSubscription = null;
 
-    let currentUser = null;
-    let selectedContact = null;          // { contact_code, alias }
-    let messageSubscription = null;
+        // --- Tab switching ---
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
+            document.getElementById('profileTab').style.display = tab === 'profile' ? 'block' : 'none';
+            document.getElementById('chatsTab').style.display = tab === 'chats' ? 'block' : 'none';
+            document.getElementById('addTab').style.display = tab === 'add' ? 'block' : 'none';
 
-    // --- Tab switching ---
-    window.switchTab = function(tab) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
-        document.getElementById('profileTab').style.display = tab === 'profile' ? 'block' : 'none';
-        document.getElementById('chatsTab').style.display = tab === 'chats' ? 'block' : 'none';
-        document.getElementById('addTab').style.display = tab === 'add' ? 'block' : 'none';
-        if (tab === 'chats') {
+            if (tab === 'chats') {
+                loadContacts();
+            } else if (tab === 'add') {
+                loadFriendRequests();
+            }
+        };
+
+        // --- Helper functions ---
+        async function hashPassword(pw) {
+            await new Promise(r => setTimeout(r, 500));
+            const hasher = window.bcrypt || window.dcodeIO?.bcrypt;
+            if (!hasher) throw new Error("bcrypt not loaded");
+            return hasher.hash(pw, 10);
+        }
+
+        async function verifyPassword(pw, hash) {
+            const hasher = window.bcrypt || window.dcodeIO?.bcrypt;
+            if (!hasher) return false;
+            return hasher.compare(pw, hash);
+        }
+
+        function generatePublicCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+        }
+
+        // --- Sign up ---
+        window.handleSignup = async function() {
+            const signupKey = 'vmsn_last_signup';
+            const lastSignup = localStorage.getItem(signupKey);
+            const now = Date.now();
+            if (lastSignup && (now - parseInt(lastSignup)) < 120000) {
+                authMessage.textContent = 'Please wait before creating another account';
+                authMessage.className = 'error';
+                return;
+            }
+            localStorage.setItem(signupKey, now.toString());
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            if (!username || !password) {
+                authMessage.textContent = 'fill both fields';
+                authMessage.className = 'error';
+                return;
+            }
+
+            const { data: existing } = await supabaseClient
+                .from('users')
+                .select('username')
+                .eq('username', username)
+                .maybeSingle();
+
+            if (existing) {
+                authMessage.textContent = 'Username taken!';
+                authMessage.className = 'error';
+                return;
+            }
+
+            const publicCode = generatePublicCode();
+            const hashed = await hashPassword(password);
+
+            const { data: newUser, error: insertError } = await supabaseClient
+                .from('users')
+                .insert([{ 
+                    username, 
+                    password_hash: hashed, 
+                    public_code: publicCode 
+                }])
+                .select()
+                .single();
+
+            if (insertError) {
+                authMessage.textContent = 'signup failed: ' + insertError.message;
+                authMessage.className = 'error';
+                return;
+            }
+
+            currentUser = newUser;
+            localStorage.setItem('vmsn_user', JSON.stringify(newUser));
+            showApp();
+        };
+
+        // --- Log in ---
+        window.handleLogin = async function() {
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value.trim();
+            if (!username || !password) {
+                authMessage.textContent = 'fill both fields';
+                authMessage.className = 'error';
+                return;
+            }
+
+            const { data: user, error: userError } = await supabaseClient
+                .from('users')
+                .select('*')
+                .eq('username', username)
+                .maybeSingle();
+
+            if (!user) {
+                authMessage.textContent = 'user not found';
+                authMessage.className = 'error';
+                return;
+            }
+
+            const valid = await verifyPassword(password, user.password_hash);
+            if (!valid) {
+                authMessage.textContent = 'wrong password';
+                authMessage.className = 'error';
+                return;
+            }
+
+            currentUser = user;
+            localStorage.setItem('vmsn_user', JSON.stringify(user));
+            showApp();
+        };
+
+        // --- Show main app after login ---
+        async function showApp() {
+            if (!currentUser) return;
+
+            authCard.style.display = 'none';
+            appCard.style.display = 'block';
+            displayUsername.textContent = currentUser.username;
+            displayPublicCode.textContent = currentUser.public_code;
+            switchTab('profile');
             loadContacts();
-        }
-    };
-
-    // --- Helper functions ---
-    async function hashPassword(pw) {
-        await new Promise(r => setTimeout(r, 500));
-        const hasher = window.bcrypt || window.dcodeIO?.bcrypt;
-        if (!hasher) throw new Error("bcrypt not loaded");
-        return hasher.hash(pw, 10);
-    }
-
-    async function verifyPassword(pw, hash) {
-        const hasher = window.bcrypt || window.dcodeIO?.bcrypt;
-        if (!hasher) return false;
-        return hasher.compare(pw, hash);
-    }
-
-    function generatePublicCode() {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        return Array.from({ length: 8 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-    }
-
-    // --- Sign up ---
-    window.handleSignup = async function() {
-        // 2-minute cooldown for signup
-        const signupKey = 'vmsn_last_signup';
-        const lastSignup = localStorage.getItem(signupKey);
-        const now = Date.now();
-        if (lastSignup && (now - parseInt(lastSignup)) < 120000) {
-            authMessage.textContent = 'Please wait before creating another account';
-            authMessage.className = 'error';
-            return;
-        }
-        localStorage.setItem(signupKey, now.toString());
-
-        const username = usernameInput.value.trim();
-        const password = passwordInput.value.trim();
-        if (!username || !password) {
-            authMessage.textContent = 'fill both fields';
-            authMessage.className = 'error';
-            return;
+            loadFriendRequests();          // preload for later
+            setupRealtime();
+            setupFriendRequestsRealtime();
         }
 
-        const { data: existing } = await supabaseClient
-            .from('users')
-            .select('username')
-            .eq('username', username)
-            .maybeSingle();
+        // --- Load contacts (friends) ---
+        async function loadContacts() {
+            if (!currentUser) return;
 
-        if (existing) {
-            authMessage.textContent = 'Username taken!';
-            authMessage.className = 'error';
-            return;
-        }
+            const { data: contacts, error } = await supabaseClient
+                .from('contacts')
+                .select('*')
+                .eq('user_id', currentUser.id);
 
-        const publicCode = generatePublicCode();
-        const hashed = await hashPassword(password);
+            if (error) {
+                console.error('Error loading contacts:', error);
+                contactsContainer.innerHTML = '<div class="empty-state">Error loading contacts.</div>';
+                return;
+            }
 
-        const { data: newUser, error: insertError } = await supabaseClient
-            .from('users')
-            .insert([{ 
-                username, 
-                password_hash: hashed, 
-                public_code: publicCode 
-            }])
-            .select()
-            .single();
+            // Fetch unread messages
+            const { data: unreadMessages, error: unreadError } = await supabaseClient
+                .from('messages')
+                .select('from_code')
+                .eq('to_code', currentUser.public_code)
+                .eq('read', false);
 
-        if (insertError) {
-            authMessage.textContent = 'signup failed: ' + insertError.message;
-            authMessage.className = 'error';
-            return;
-        }
+            if (unreadError) {
+                console.error('Error fetching unread counts:', unreadError);
+            }
 
-        currentUser = newUser;
-        localStorage.setItem('vmsn_user', JSON.stringify(newUser));
-        showApp();
-    };
+            const unreadCounts = {};
+            if (unreadMessages) {
+                unreadMessages.forEach(msg => {
+                    unreadCounts[msg.from_code] = (unreadCounts[msg.from_code] || 0) + 1;
+                });
+            }
 
-    // --- Log in ---
-    window.handleLogin = async function() {
-        const username = usernameInput.value.trim();
-        const password = passwordInput.value.trim();
-        if (!username || !password) {
-            authMessage.textContent = 'fill both fields';
-            authMessage.className = 'error';
-            return;
-        }
+            if (!contacts || contacts.length === 0) {
+                contactsContainer.innerHTML = '<div class="empty-state">No friends yet. Add some in the "Add Contact" tab.</div>';
+                chatArea.style.display = 'none';
+                return;
+            }
 
-        const { data: user, error: userError } = await supabaseClient
-            .from('users')
-            .select('*')
-            .eq('username', username)
-            .maybeSingle();
-
-        if (!user) {
-            authMessage.textContent = 'user not found';
-            authMessage.className = 'error';
-            return;
-        }
-
-        const valid = await verifyPassword(password, user.password_hash);
-        if (!valid) {
-            authMessage.textContent = 'wrong password';
-            authMessage.className = 'error';
-            return;
-        }
-
-        currentUser = user;
-        localStorage.setItem('vmsn_user', JSON.stringify(user));
-        showApp();
-    };
-
-    // --- Show main app after login ---
-    async function showApp() {
-        if (!currentUser) return;
-        
-        authCard.style.display = 'none';
-        appCard.style.display = 'block';
-        displayUsername.textContent = currentUser.username;
-        displayPublicCode.textContent = currentUser.public_code;
-        switchTab('profile');
-        loadContacts();
-        setupRealtime();
-    }
-
-    // --- Load contacts and unread counts ---
-    async function loadContacts() {
-        if (!currentUser) return;
-        console.log('Loading contacts for user:', currentUser.id);
-        
-        // Fetch contacts
-        const { data: contacts, error } = await supabaseClient
-            .from('contacts')
-            .select('*')
-            .eq('user_id', currentUser.id);
-            
-        if (error) {
-            console.error('Error loading contacts:', error);
-            contactsContainer.innerHTML = '<div class="empty-state">Error loading contacts.</div>';
-            return;
-        }
-        
-        // Fetch all unread messages for this user
-        const { data: unreadMessages, error: unreadError } = await supabaseClient
-            .from('messages')
-            .select('from_code')
-            .eq('to_code', currentUser.public_code)
-            .eq('read', false);
-        
-        if (unreadError) {
-            console.error('Error fetching unread counts:', unreadError);
-        }
-
-        // Count unread messages by sender
-        const unreadCounts = {};
-        if (unreadMessages) {
-            unreadMessages.forEach(msg => {
-                unreadCounts[msg.from_code] = (unreadCounts[msg.from_code] || 0) + 1;
+            let html = '<div class="contacts-list">';
+            contacts.forEach(c => {
+                const isSelected = selectedContact?.contact_code === c.contact_code;
+                const unread = unreadCounts[c.contact_code] || 0;
+                const badge = unread > 0 ? `<span class="unread-badge">${unread > 9 ? '9+' : unread}</span>` : '';
+                html += `<div class="contact-item ${isSelected ? 'selected' : ''}" onclick="selectContact('${c.contact_code}', '${c.alias || c.contact_code}')">
+                    <span class="contact-alias">${c.alias || '?'}</span>
+                    <span class="contact-code">${c.contact_code}</span>
+                    ${badge}
+                </div>`;
             });
-        }
+            html += '</div>';
+            contactsContainer.innerHTML = html;
 
-        console.log('Contacts loaded:', contacts);
-        console.log('Unread counts:', unreadCounts);
-
-        if (!contacts || contacts.length === 0) {
-            contactsContainer.innerHTML = '<div class="empty-state">No contacts yet. Add some in the "Add Contact" tab.</div>';
-            chatArea.style.display = 'none';
-            return;
-        }
-        
-        let html = '<div class="contacts-list">';
-        contacts.forEach(c => {
-            const isSelected = selectedContact?.contact_code === c.contact_code;
-            const unread = unreadCounts[c.contact_code] || 0;
-            const badge = unread > 0 ? `<span class="unread-badge">${unread > 9 ? '9+' : unread}</span>` : '';
-            html += `<div class="contact-item ${isSelected ? 'selected' : ''}" onclick="selectContact('${c.contact_code}', '${c.alias || c.contact_code}')">
-                <span class="contact-alias">${c.alias || '?'}</span>
-                <span class="contact-code">${c.contact_code}</span>
-                ${badge}
-            </div>`;
-        });
-        html += '</div>';
-        contactsContainer.innerHTML = html;
-        
-        if (selectedContact && contacts.some(c => c.contact_code === selectedContact.contact_code)) {
-            chatArea.style.display = 'block';
-            loadMessages();
-        } else {
-            selectedContact = null;
-            chatArea.style.display = 'none';
-        }
-    }
-
-    // --- Select a contact ---
-    window.selectContact = async function(code, alias) {
-        selectedContact = { contact_code: code, alias };
-        chatArea.style.display = 'block';
-        // Mark messages as read and wait for completion before reloading contacts
-        await markMessagesAsRead(code);
-        await loadContacts();  // refresh contacts to remove badge
-        loadMessages();
-    };
-
-    // --- Mark messages from a specific sender as read ---
-    async function markMessagesAsRead(fromCode) {
-        if (!currentUser) return;
-        const { error } = await supabaseClient
-            .from('messages')
-            .update({ read: true })
-            .eq('from_code', fromCode)
-            .eq('to_code', currentUser.public_code)
-            .eq('read', false);
-        if (error) console.error('Error marking messages as read:', error);
-    }
-
-    // --- Load messages between current user and selected contact ---
-    async function loadMessages() {
-        if (!selectedContact) return;
-        
-        const { data, error } = await supabaseClient
-            .from('messages')
-            .select('*')
-            .or(`and(from_code.eq.${currentUser.public_code},to_code.eq.${selectedContact.contact_code}),and(from_code.eq.${selectedContact.contact_code},to_code.eq.${currentUser.public_code})`)
-            .order('created_at', { ascending: true });
-            
-        if (error) {
-            console.error('Error loading messages:', error);
-            return;
-        }
-        
-        messagesContainer.innerHTML = '';
-        data.forEach(m => {
-            const isSent = m.from_code === currentUser.public_code;
-            const div = document.createElement('div');
-            div.className = `message ${isSent ? 'sent' : 'received'}`;
-            div.innerHTML = `
-                <div class="message-bubble">${m.content}</div>
-                <div class="message-time">${new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-            `;
-            messagesContainer.appendChild(div);
-        });
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    // --- Send a message ---
-    window.sendMessage = async function() {
-        if (!selectedContact) return;
-        const content = messageInput.value.trim();
-        if (!content) return;
-        
-        const { error } = await supabaseClient.from('messages').insert([{
-            from_code: currentUser.public_code,
-            to_code: selectedContact.contact_code,
-            content,
-            read: false
-        }]);
-        
-        if (error) {
-            console.error('Send error:', error);
-            alert('Failed to send: ' + error.message);
-            return;
-        }
-        
-        messageInput.value = '';
-        // Immediately reload messages to show the sent message
-        loadMessages();
-        // Also refresh contacts to update any potential unread counts (for the other user, handled by realtime)
-    };
-
-    // --- Add contact (with duplicate prevention) ---
-    window.addContact = async function() {
-        const code = contactCodeInput.value.trim();
-        const alias = contactAliasInput.value.trim() || code;
-        
-        if (!code) {
-            addContactMessage.textContent = 'Enter a code';
-            addContactMessage.className = 'error';
-            return;
-        }
-        
-        if (code === currentUser.public_code) {
-            addContactMessage.textContent = "You can't add yourself";
-            addContactMessage.className = 'error';
-            return;
-        }
-        
-        const { data: target, error: findError } = await supabaseClient
-            .from('users')
-            .select('public_code')
-            .eq('public_code', code)
-            .maybeSingle();
-            
-        if (findError) {
-            console.error('Find user error:', findError);
-            addContactMessage.textContent = 'Error looking up code';
-            addContactMessage.className = 'error';
-            return;
-        }
-        
-        if (!target) {
-            addContactMessage.textContent = 'no user with that code';
-            addContactMessage.className = 'error';
-            return;
-        }
-        
-        const { data: existingContact, error: checkError } = await supabaseClient
-            .from('contacts')
-            .select('*')
-            .eq('user_id', currentUser.id)
-            .eq('contact_code', code)
-            .maybeSingle();
-            
-        if (existingContact) {
-            addContactMessage.textContent = 'contact already exists';
-            addContactMessage.className = 'error';
-            return;
-        }
-        
-        const { error } = await supabaseClient.from('contacts').insert([{
-            user_id: currentUser.id,
-            contact_code: code,
-            alias: alias
-        }]);
-        
-        if (error) {
-            console.error('Insert contact error:', error);
-            addContactMessage.textContent = 'error: ' + error.message;
-            addContactMessage.className = 'error';
-            return;
-        }
-        
-        contactCodeInput.value = '';
-        contactAliasInput.value = '';
-        addContactMessage.textContent = 'contact added';
-        addContactMessage.className = 'success';
-        loadContacts();
-        setTimeout(() => addContactMessage.textContent = '', 2000);
-    };
-
-    // --- Real-time subscription for new messages ---
-    function setupRealtime() {
-        if (messageSubscription) messageSubscription.unsubscribe();
-        if (!currentUser) return;
-        
-        messageSubscription = supabaseClient
-            .channel('messages')
-            .on('postgres_changes', { 
-                event: 'INSERT', 
-                schema: 'public', 
-                table: 'messages',
-                filter: `to_code=eq.${currentUser.public_code}`
-            }, (payload) => {
-                const newMsg = payload.new;
-                console.log('New message received:', newMsg);
-                
-                if (selectedContact && newMsg.from_code === selectedContact.contact_code) {
-                    // If chat is open with this sender, load messages and mark as read
-                    loadMessages();
-                    markMessagesAsRead(selectedContact.contact_code);
-                } else {
-                    // Otherwise just refresh contacts to show unread badge
-                    loadContacts();
-                }
-            })
-            .subscribe();
-    }
-
-    // --- Logout ---
-    window.logout = async function() {
-        if (messageSubscription) messageSubscription.unsubscribe();
-        currentUser = null;
-        selectedContact = null;
-        localStorage.removeItem('vmsn_user');
-        authCard.style.display = 'block';
-        appCard.style.display = 'none';
-        usernameInput.value = '';
-        passwordInput.value = '';
-    };
-
-    // --- Check for existing session from localStorage ---
-    (async function init() {
-        const savedUser = localStorage.getItem('vmsn_user');
-        if (savedUser) {
-            try {
-                currentUser = JSON.parse(savedUser);
-                showApp();
-            } catch (e) {
-                localStorage.removeItem('vmsn_user');
+            if (selectedContact && contacts.some(c => c.contact_code === selectedContact.contact_code)) {
+                chatArea.style.display = 'block';
+                loadMessages();
+            } else {
+                selectedContact = null;
+                chatArea.style.display = 'none';
             }
         }
-    })();
+
+        // --- Select a contact ---
+        window.selectContact = async function(code, alias) {
+            selectedContact = { contact_code: code, alias };
+            chatArea.style.display = 'block';
+            await markMessagesAsRead(code);
+            await loadContacts();   // refresh to remove badge
+            loadMessages();
+        };
+
+        // --- Mark messages from a specific sender as read ---
+        async function markMessagesAsRead(fromCode) {
+            if (!currentUser) return;
+            const { error } = await supabaseClient
+                .from('messages')
+                .update({ read: true })
+                .eq('from_code', fromCode)
+                .eq('to_code', currentUser.public_code)
+                .eq('read', false);
+            if (error) console.error('Error marking messages as read:', error);
+        }
+
+        // --- Load messages between current user and selected contact ---
+        async function loadMessages() {
+            if (!selectedContact) return;
+
+            const { data, error } = await supabaseClient
+                .from('messages')
+                .select('*')
+                .or(`and(from_code.eq.${currentUser.public_code},to_code.eq.${selectedContact.contact_code}),and(from_code.eq.${selectedContact.contact_code},to_code.eq.${currentUser.public_code})`)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('Error loading messages:', error);
+                return;
+            }
+
+            messagesContainer.innerHTML = '';
+            data.forEach(m => {
+                const isSent = m.from_code === currentUser.public_code;
+                const div = document.createElement('div');
+                div.className = `message ${isSent ? 'sent' : 'received'}`;
+                div.innerHTML = `
+                    <div class="message-bubble">${m.content}</div>
+                    <div class="message-time">${new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                `;
+                messagesContainer.appendChild(div);
+            });
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        // --- Send a message ---
+        window.sendMessage = async function() {
+            if (!selectedContact) return;
+            const content = messageInput.value.trim();
+            if (!content) return;
+
+            const { error } = await supabaseClient.from('messages').insert([{
+                from_code: currentUser.public_code,
+                to_code: selectedContact.contact_code,
+                content,
+                read: false
+            }]);
+
+            if (error) {
+                console.error('Send error:', error);
+                alert('Failed to send: ' + error.message);
+                return;
+            }
+
+            messageInput.value = '';
+            loadMessages();   // show sent message immediately
+        };
+
+        // --- Send friend request ---
+        window.sendFriendRequest = async function() {
+            const code = contactCodeInput.value.trim();
+            const aliasForRecipient = contactAliasInput.value.trim(); // alias the sender gives to the recipient
+
+            if (!code) {
+                addContactMessage.textContent = 'Enter a code';
+                addContactMessage.className = 'error';
+                return;
+            }
+
+            if (code === currentUser.public_code) {
+                addContactMessage.textContent = "You can't add yourself";
+                addContactMessage.className = 'error';
+                return;
+            }
+
+            const { data: targetUser, error: findError } = await supabaseClient
+                .from('users')
+                .select('id, public_code, username')
+                .eq('public_code', code)
+                .maybeSingle();
+
+            if (findError || !targetUser) {
+                addContactMessage.textContent = 'No user with that code';
+                addContactMessage.className = 'error';
+                return;
+            }
+
+            // Check if already friends
+            const { data: existingContact } = await supabaseClient
+                .from('contacts')
+                .select('*')
+                .eq('user_id', currentUser.id)
+                .eq('contact_code', code)
+                .maybeSingle();
+
+            if (existingContact) {
+                addContactMessage.textContent = 'Already friends!';
+                addContactMessage.className = 'error';
+                return;
+            }
+
+            // Check for existing pending request
+            const { data: existingRequest } = await supabaseClient
+                .from('friend_requests')
+                .select('*')
+                .eq('from_user_id', currentUser.id)
+                .eq('to_user_id', targetUser.id)
+                .maybeSingle();
+
+            if (existingRequest) {
+                if (existingRequest.status === 'pending') {
+                    addContactMessage.textContent = 'Friend request already sent';
+                } else if (existingRequest.status === 'rejected') {
+                    addContactMessage.textContent = 'Request was rejected';
+                }
+                addContactMessage.className = 'error';
+                return;
+            }
+
+            // Insert friend request with the alias for recipient
+            const { error: requestError } = await supabaseClient
+                .from('friend_requests')
+                .insert([{
+                    from_user_id: currentUser.id,
+                    to_user_id: targetUser.id,
+                    status: 'pending',
+                    alias_for_recipient: aliasForRecipient || targetUser.username // fallback to their username
+                }]);
+
+            if (requestError) {
+                console.error('Request error:', requestError);
+                addContactMessage.textContent = 'Failed to send request';
+                addContactMessage.className = 'error';
+                return;
+            }
+
+            contactCodeInput.value = '';
+            contactAliasInput.value = '';
+            addContactMessage.textContent = 'Friend request sent!';
+            addContactMessage.className = 'success';
+            setTimeout(() => addContactMessage.textContent = '', 2000);
+        };
+
+        // --- Load pending friend requests ---
+        async function loadFriendRequests() {
+            if (!currentUser) return;
+
+            const { data: requests, error } = await supabaseClient
+                .from('friend_requests')
+                .select('*, from_user:from_user_id(username, public_code)')
+                .eq('to_user_id', currentUser.id)
+                .eq('status', 'pending');
+
+            if (error) {
+                console.error('Error loading requests:', error);
+                return;
+            }
+
+            if (!requestsContainer) return;
+
+            if (requests.length === 0) {
+                requestsContainer.innerHTML = '<p class="empty-state">No pending requests</p>';
+            } else {
+                let html = '<h3>Pending Friend Requests</h3><div class="requests-list">';
+                requests.forEach(req => {
+                    html += `
+                        <div class="request-item">
+                            <span>${req.from_user?.username || 'Unknown'} (${req.from_user?.public_code || ''})</span>
+                            <button onclick="acceptFriendRequest('${req.id}')">Accept</button>
+                            <button onclick="rejectFriendRequest('${req.id}')">Reject</button>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                requestsContainer.innerHTML = html;
+            }
+        }
+
+        // --- Accept friend request ---
+        window.acceptFriendRequest = async function(requestId) {
+            const { data: request, error: fetchError } = await supabaseClient
+                .from('friend_requests')
+                .select('*, from_user:from_user_id(username, public_code)')
+                .eq('id', requestId)
+                .single();
+
+            if (fetchError || !request) {
+                console.error('Error fetching request:', fetchError);
+                return;
+            }
+
+            const senderUsername = request.from_user.username;
+            const senderPublicCode = request.from_user.public_code;
+            const senderChosenAlias = request.alias_for_recipient || senderUsername; // alias sender chose for recipient
+
+            // Prompt the current user for an alias for the sender (their new friend)
+            let recipientChosenAlias = prompt(`Enter an alias for ${senderUsername} (or press OK to use their username):`, senderUsername);
+            if (recipientChosenAlias === null) {
+                recipientChosenAlias = senderUsername; // fallback
+            } else {
+                recipientChosenAlias = recipientChosenAlias.trim() || senderUsername;
+            }
+
+            // Add contact for current user (recipient) – using their chosen alias
+            const { data: existing1 } = await supabaseClient
+                .from('contacts')
+                .select('id')
+                .eq('user_id', currentUser.id)
+                .eq('contact_code', senderPublicCode)
+                .maybeSingle();
+
+            if (!existing1) {
+                const { error: contactError1 } = await supabaseClient
+                    .from('contacts')
+                    .insert([{
+                        user_id: currentUser.id,
+                        contact_code: senderPublicCode,
+                        alias: recipientChosenAlias
+                    }]);
+                if (contactError1) console.error('Error adding contact:', contactError1);
+            }
+
+            // Add contact for the requester (sender) – using the alias they chose
+            const { data: existing2 } = await supabaseClient
+                .from('contacts')
+                .select('id')
+                .eq('user_id', request.from_user_id)
+                .eq('contact_code', currentUser.public_code)
+                .maybeSingle();
+
+            if (!existing2) {
+                const { error: contactError2 } = await supabaseClient
+                    .from('contacts')
+                    .insert([{
+                        user_id: request.from_user_id,
+                        contact_code: currentUser.public_code,
+                        alias: senderChosenAlias   // use the alias the sender originally entered
+                    }]);
+                if (contactError2) console.error('Error adding contact for requester:', contactError2);
+            }
+
+            // Update request status
+            await supabaseClient
+                .from('friend_requests')
+                .update({ status: 'accepted' })
+                .eq('id', requestId);
+
+            addContactMessage.textContent = 'Friend request accepted!';
+            addContactMessage.className = 'success';
+            loadFriendRequests();
+            loadContacts();
+            setTimeout(() => addContactMessage.textContent = '', 2000);
+        };
+
+        // --- Reject friend request ---
+        window.rejectFriendRequest = async function(requestId) {
+            await supabaseClient
+                .from('friend_requests')
+                .update({ status: 'rejected' })
+                .eq('id', requestId);
+
+            addContactMessage.textContent = 'Request rejected';
+            addContactMessage.className = 'error';
+            loadFriendRequests();
+            setTimeout(() => addContactMessage.textContent = '', 2000);
+        };
+
+        // --- Real-time message subscription ---
+        function setupRealtime() {
+            if (messageSubscription) messageSubscription.unsubscribe();
+            if (!currentUser) return;
+
+            messageSubscription = supabaseClient
+                .channel('messages')
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages',
+                    filter: `to_code=eq.${currentUser.public_code}`
+                }, (payload) => {
+                    const newMsg = payload.new;
+                    if (selectedContact && newMsg.from_code === selectedContact.contact_code) {
+                        loadMessages();
+                        markMessagesAsRead(selectedContact.contact_code);
+                    } else {
+                        loadContacts();
+                    }
+                })
+                .subscribe();
+        }
+
+        // --- Real-time friend request subscription ---
+        function setupFriendRequestsRealtime() {
+            if (requestSubscription) requestSubscription.unsubscribe();
+            if (!currentUser) return;
+
+            requestSubscription = supabaseClient
+                .channel('friend_requests')
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'friend_requests',
+                    filter: `to_user_id=eq.${currentUser.id}`
+                }, () => {
+                    loadFriendRequests();
+                })
+                .subscribe();
+        }
+
+        // --- Logout ---
+        window.logout = async function() {
+            if (messageSubscription) messageSubscription.unsubscribe();
+            if (requestSubscription) requestSubscription.unsubscribe();
+            currentUser = null;
+            selectedContact = null;
+            localStorage.removeItem('vmsn_user');
+            authCard.style.display = 'block';
+            appCard.style.display = 'none';
+            usernameInput.value = '';
+            passwordInput.value = '';
+        };
+
+        // --- Check for existing session on load ---
+        (async function init() {
+            const savedUser = localStorage.getItem('vmsn_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    showApp();
+                } catch (e) {
+                    localStorage.removeItem('vmsn_user');
+                }
+            }
+        })();
     </script>
 </body>
 </html>
