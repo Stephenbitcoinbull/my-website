@@ -5,6 +5,17 @@
     <title>VMSN</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bcryptjs/2.4.3/bcrypt.min.js"></script>
+
+    <script>
+    // 🔐 SECURITY CHECK - Redirect if not coming from portal
+    if (sessionStorage.getItem('auth') !== 'true') {
+        // Not authorized – send back to main robotics page
+        window.location.href = '../../index.html';
+    } else {
+        // Authorized – remove the flag so it's one-time use
+        sessionStorage.removeItem('auth');
+    }
+</script>
     <style>
         * {
             box-sizing: border-box;
