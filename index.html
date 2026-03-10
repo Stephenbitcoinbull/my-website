@@ -68,7 +68,7 @@
             opacity: 0.5;
             background: rgba(255,255,255,0.3);
         }
-        #secret-input-container {
+        #right-corner-input-container {
             position: fixed;
             bottom: 50px;
             right: 10px;
@@ -80,14 +80,14 @@
             z-index: 101;
             border: 1px solid #ccc;
         }
-        #secret-input {
+        #right-corner-input {
             padding: 8px;
             border: 1px solid #3498db;
             border-radius: 4px;
             width: 150px;
             font-size: 12px;
         }
-        #secret-submit {
+        #right-corner-submit {
             background: #3498db;
             color: white;
             border: none;
@@ -350,14 +350,14 @@
 
     <!-- Top-left portal-->
     <div id="dev-portal">
-        <input type="text" id="access-key" placeholder="Sys_ID...">
+        <input type="text" id="access-key" placeholder="System ID:">
     </div>
     
     <!-- Bottom-right corner -->
     <div id="right-corner">⚙️</div>
-    <div id="secret-input-container">
-        <input type="text" id="secret-input" placeholder="Enter code...">
-        <button id="secret-submit">→</button>
+    <div id="right-corner-input-container">
+        <input type="text" id="right-corner-input" placeholder="Enter student username:">
+        <button id="right-corner-submit">→</button>
     </div>
 
     <nav>
@@ -604,9 +604,9 @@
 
         
         const secretCorner = document.getElementById('right-corner');
-        const secretContainer = document.getElementById('secret-input-container');
-        const secretInput = document.getElementById('secret-input');
-        const secretSubmit = document.getElementById('secret-submit');
+        const secretContainer = document.getElementById('right-corner-input-container');
+        const secretInput = document.getElementById('right-corner-input');
+        const secretSubmit = document.getElementById('right-corner-submit');
 
         secretCorner.addEventListener('click', () => {
             secretContainer.style.display = 'flex';
