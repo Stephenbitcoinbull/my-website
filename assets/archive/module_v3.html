@@ -4,277 +4,392 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chess Coordinate Trainer</title>
+  <script>
+    // 🔐 SECURITY CHECK - Redirect if not coming from portal
+    if (sessionStorage.getItem('auth') !== 'true') {
+        // Not authorized – send back to main robotics page
+        window.location.href = '../../index.html';
+    } else {
+        // Authorized – remove the flag so it's one-time use
+        sessionStorage.removeItem('auth');
+    }
+</script>
   <style>
     :root {
       --light: #f0d9b5;
       --dark: #b58863;
-      --highlight-border: #81b64c;
-      --wrong-color: #e74c3c;
-      --bg: #262421;
+      --bg: #161512;
       --text: #fff;
-      --panel-bg: #1e1e1e;
+      --panel-bg: #262421;
+      --overlay-color: #ffffffcc;
+      --overlay-wrong: #e74c3c;
+      --target-border: #ffff00;
+      /* Dynamic board sizing to fill most of the screen */
+      --board-size: min(75vw, 80vh);
     }
+    
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: var(--bg);
       color: var(--text);
+      min-height: 100vh; /* Allow body to grow instead of locking to viewport */
       display: flex;
       justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 20px;
-      box-sizing: border-box;
+      user-select: none;
+      padding: 40px 20px; /* Add padding so it doesn't hug the screen edges when scrolling */
     }
+    
     .trainer-container {
-      background: var(--panel-bg);
-      border-radius: 12px;
-      padding: 20px;
-      max-width: 520px;
       width: 100%;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      max-width: 1200px;
     }
+    
     .header {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-start;
       align-items: center;
-      margin-bottom: 15px;
     }
+    
     .title {
-      font-size: 1.5rem;
+      font-size: clamp(1.5rem, 4vw, 2.5rem);
       font-weight: bold;
       color: #ffcf0a;
     }
-    .best-score {
-      font-size: 0.9rem;
+
+    .main-row {
+      display: flex;
+      flex: 1;
+      gap: 30px;
+      justify-content: center;
+      flex-wrap: wrap; /* Allow wrapping on extremely small screens */
+    }
+
+    /* --- Left Panel Controls --- */
+    .left-panel {
+      width: 250px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      flex-shrink: 0;
+    }
+
+    .btn-group {
+      display: flex;
+      background: #333;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .btn-group button {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #aaa;
+      padding: 12px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+
+    .btn-group button.active {
+      background: #d85000;
+      color: white;
+      font-weight: bold;
+    }
+
+    .btn-group button:hover:not(.active) {
+      background: #444;
+      color: white;
+    }
+
+    .toggle-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 10px;
       color: #aaa;
     }
-    .best-score span {
-      color: #ffcf0a;
-      font-weight: bold;
-    }
-    .controls {
+
+    .toggle-list label {
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 15px;
       align-items: center;
-    }
-    button, .btn {
-      background: #444;
-      border: none;
-      color: white;
-      padding: 8px 14px;
-      border-radius: 6px;
-      font-size: 0.85rem;
+      gap: 10px;
       cursor: pointer;
-      transition: background 0.2s;
-      white-space: nowrap;
+      font-size: 1rem;
     }
-    button:hover, .btn:hover {
-      background: #666;
+
+    /* --- Center Board Area --- */
+    .board-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex-shrink: 0;
     }
-    button.active {
-      background: #81b64c;
-      color: #000;
-    }
-    .timer {
-      font-size: 1.2rem;
-      font-weight: bold;
-      color: #ffcf0a;
-      margin-left: auto;
-      min-width: 50px;
-      text-align: right;
-    }
-    .board-wrapper {
+
+    .board-container {
       display: flex;
       align-items: center;
-      gap: 5px;
-      margin-bottom: 10px;
+      gap: 8px;
     }
+
     .ranks {
       display: flex;
       flex-direction: column;
       justify-content: space-around;
-      height: 480px; /* 8*60 */
-      font-size: 12px;
+      height: var(--board-size); 
+      font-size: 1rem;
       color: #aaa;
-      width: 20px;
-      text-align: center;
+      width: 15px;
+      text-align: right;
     }
+
+    .board-outer {
+      display: flex;
+      flex-direction: column;
+    }
+
     .board {
       display: grid;
-      grid-template-columns: repeat(8, 60px);
-      grid-template-rows: repeat(8, 60px);
-      border: 2px solid #3a3a3a;
-      user-select: none;
+      /* minmax forces the grid to stay perfectly uniform regardless of content */
+      grid-template-columns: repeat(8, minmax(0, 1fr));
+      grid-template-rows: repeat(8, minmax(0, 1fr));
+      width: var(--board-size);
+      height: var(--board-size);
+      border: 3px solid #3a3a3a;
+      border-radius: 4px;
       position: relative;
     }
-    .square {
-      width: 60px;
-      height: 60px;
-      cursor: pointer;
-      position: relative;
-      box-sizing: border-box;
-      transition: background 0.15s;
-    }
-    .square.light { background: var(--light); }
-    .square.dark  { background: var(--dark); }
-    .square.highlight {
-      box-shadow: inset 0 0 0 3px var(--highlight-border);
-      z-index: 2;
-    }
-    .square.wrong-highlight {
-      box-shadow: inset 0 0 0 3px var(--wrong-color);
-      z-index: 2;
-    }
+
     .files {
       display: flex;
       justify-content: space-around;
-      width: 480px;
-      margin-left: 25px; /* align with board after ranks label */
-      font-size: 12px;
+      width: var(--board-size); 
+      font-size: 1rem;
       color: #aaa;
       margin-top: 5px;
     }
-    .files span {
-      width: 60px;
-      text-align: center;
+
+    .square {
+      cursor: pointer;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
+
+    .square.light { background: var(--light); }
+    .square.dark  { background: var(--dark); }
+    
+    .square:hover::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.15);
+      pointer-events: none;
+    }
+
+    .square.target-highlight {
+      box-shadow: inset 0 0 0 4px var(--target-border);
+      z-index: 2;
+    }
+
+    .piece {
+      position: absolute; /* Prevents pieces from changing the grid square size */
+      font-size: calc(var(--board-size) * 0.09); /* Scales proportionally with the board */
+      opacity: 0.9;
+      pointer-events: none;
+    }
+
+    .coord-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: calc(var(--board-size) * 0.2); 
+      font-weight: bold;
+      pointer-events: none;
+      color: var(--overlay-color);
+      text-shadow: 0 0 20px rgba(0,0,0,0.9);
+      z-index: 5;
+      transition: color 0.15s;
+    }
+
+    .coord-overlay.wrong { color: var(--overlay-wrong); }
+
     .type-input-area {
       display: flex;
       gap: 10px;
-      margin: 12px 0;
+      margin-top: 25px; /* Added extra margin so it's easier to see/scroll to */
+      margin-bottom: 25px;
       justify-content: center;
-      align-items: center;
+      width: 100%;
     }
+
     .type-input-area input {
-      padding: 8px 12px;
-      border: 1px solid #666;
+      padding: 15px;
+      border: 2px solid #555;
       border-radius: 6px;
-      background: #333;
+      background: #2b2b2b;
       color: white;
-      width: 80px;
+      width: 150px;
       text-align: center;
-      font-size: 1rem;
+      font-size: 1.5rem;
+      outline: none;
+      transition: 0.2s;
     }
-    .type-input-area button {
-      padding: 8px 16px;
+
+    .type-input-area input:focus { border-color: #d85000; }
+
+    /* --- Right Panel Stats --- */
+    .right-panel {
+      width: 250px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 15px;
+      background: var(--panel-bg);
+      padding: 25px;
+      border-radius: 12px;
+      height: fit-content;
+      flex-shrink: 0;
     }
-    .score-streak {
-      text-align: center;
-      margin: 8px 0;
-      font-size: 0.9rem;
-    }
-    .target-display {
-      text-align: center;
-      font-size: 1.3rem;
-      margin: 8px 0;
-      color: #ffcf0a;
+
+    .timer-big {
+      font-size: 3rem;
       font-weight: bold;
+      color: #ffcf0a;
     }
-    .hidden {
-      display: none !important;
+
+    .score-big {
+      font-size: 4rem;
+      font-weight: bold;
+      line-height: 1;
     }
+
+    .score-label {
+      color: #aaa;
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .action-btn {
+      width: 100%;
+      padding: 15px;
+      font-size: 1.2rem;
+      font-weight: bold;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: 0.2s;
+    }
+
+    .start-btn { background: #3692e7; }
+    .start-btn:hover { background: #2a7ac4; }
+    
+    .restart-btn { background: #444; }
+    .restart-btn:hover { background: #666; }
+
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
+
 <div class="trainer-container">
-  <!-- Header -->
   <div class="header">
     <div class="title">Vision</div>
-    <div class="best-score">Personal Best: <span id="best-score-display">0</span></div>
   </div>
 
-  <!-- Controls row -->
-  <div class="controls">
-    <button id="mode-click-btn" class="active">Click Squares</button>
-    <button id="mode-type-btn">Name Squares</button>
-    <button id="flip-btn">Flip Board</button>
-    <button id="coords-toggle-btn">Coordinates</button>
-    <button id="color-btn">White</button>
-    <button id="timer-toggle-btn">∞</button>
-    <span class="timer" id="timer-display"></span>
-  </div>
+  <div class="main-row">
+    
+    <div class="left-panel">
+      <div class="btn-group">
+        <button id="mode-click" class="active">Find square</button>
+        <button id="mode-type">Name square</button>
+      </div>
 
-  <!-- Target / feedback -->
-  <div class="target-display" id="target-display">Click on: e4</div>
+      <div class="btn-group">
+        <button id="time-inf">∞</button>
+        <button id="time-30s" class="active">0:30</button>
+      </div>
 
-  <!-- Name squares input (hidden by default) -->
-  <div class="type-input-area hidden" id="type-input-area">
-    <input type="text" id="type-input" placeholder="e4" maxlength="2" autocomplete="off">
-    <button id="type-submit">Submit</button>
-  </div>
+      <div class="btn-group">
+        <button id="color-white" class="active">White</button>
+        <button id="color-black">Black</button>
+      </div>
 
-  <!-- Board + ranks + files -->
-  <div class="board-wrapper">
-    <div class="ranks" id="ranks-labels">
-      <span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
-    </div>
-    <div>
-      <div class="board" id="board"></div>
-      <div class="files" id="files-labels">
-        <span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span>
+      <div class="toggle-list">
+        <label><input type="checkbox" id="show-coords" checked> Show coordinates</label>
+        <label><input type="checkbox" id="show-pieces"> Show pieces</label>
       </div>
     </div>
-  </div>
 
-  <!-- Score / streak -->
-  <div class="score-streak">
-    Score: <span id="score">0</span> | Streak: <span id="streak">0</span>
-  </div>
+    <div class="board-area">
+      <div class="board-container">
+        <div class="ranks" id="ranks-labels"></div>
+        <div class="board-outer">
+          <div class="board" id="board">
+            <div class="coord-overlay" id="coord-overlay"></div>
+          </div>
+          <div class="files" id="files-labels"></div>
+        </div>
+      </div>
+      
+      <div class="type-input-area hidden" id="type-input-area">
+        <input type="text" id="type-input" placeholder="e.g. e4" maxlength="2" autocomplete="off">
+      </div>
+    </div>
 
-  <button id="reset-btn" style="width: 100%;">Reset Score</button>
+    <div class="right-panel">
+      <div class="timer-big" id="timer-display">0:30</div>
+      <div class="score-big" id="score">0</div>
+      <div class="score-label">Score</div>
+      <button id="start-btn" class="action-btn start-btn">Start Training</button>
+      <button id="restart-btn" class="action-btn restart-btn hidden">Restart</button>
+    </div>
+    
+  </div>
 </div>
 
 <script>
-  // State
   const files = ['a','b','c','d','e','f','g','h'];
   let flipped = false;
   let showCoords = true;
-  let perspective = 'white'; // 'white' or 'black'
+  let showPieces = false;
   let mode = 'click'; // 'click' or 'type'
-  let score = 0, streak = 0, bestScore = 0;
+  let timeMode = '30s'; // '30s' or 'inf'
+  
+  let score = 0;
   let currentTarget = '';
-  let timerSeconds = 0; // 0 = infinite
+  let timerActive = false;
   let timerInterval = null;
-  let gameActive = true;
+  let gameActive = false;
 
-  // DOM elements
   const boardEl = document.getElementById('board');
   const ranksEl = document.getElementById('ranks-labels');
   const filesEl = document.getElementById('files-labels');
-  const targetDisplay = document.getElementById('target-display');
+  let coordOverlay = document.getElementById('coord-overlay');
+  
   const scoreEl = document.getElementById('score');
-  const streakEl = document.getElementById('streak');
-  const bestScoreDisplay = document.getElementById('best-score-display');
   const timerDisplay = document.getElementById('timer-display');
+  
   const typeInputArea = document.getElementById('type-input-area');
   const typeInput = document.getElementById('type-input');
-  const typeSubmit = document.getElementById('type-submit');
-
-  // Load best score from localStorage
-  bestScore = parseInt(localStorage.getItem('chessCoordBest') || '0');
-  bestScoreDisplay.textContent = bestScore;
-
-  function updateBest() {
-    if (score > bestScore) {
-      bestScore = score;
-      localStorage.setItem('chessCoordBest', bestScore);
-      bestScoreDisplay.textContent = bestScore;
-    }
-  }
+  
+  const startBtn = document.getElementById('start-btn');
+  const restartBtn = document.getElementById('restart-btn');
 
   function updateStats(correct) {
-    if (correct) {
-      score++;
-      streak++;
-      updateBest();
-    } else {
-      streak = 0;
-    }
+    if (correct) score++;
     scoreEl.textContent = score;
-    streakEl.textContent = streak;
   }
 
   function getRandomCoord() {
@@ -283,202 +398,243 @@
     return file + rank;
   }
 
-  function setTarget() {
-    currentTarget = getRandomCoord();
-    targetDisplay.textContent = (mode === 'click' ? 'Click on: ' : 'Type: ') + currentTarget;
+  function applyTargetHighlight() {
+    document.querySelectorAll('.square.target-highlight').forEach(s => s.classList.remove('target-highlight'));
+    if (!currentTarget || mode !== 'type') return;
+    const targetSquare = document.querySelector(`.square[data-coord="${currentTarget}"]`);
+    if (targetSquare) targetSquare.classList.add('target-highlight');
   }
 
-  // Build board squares
+  function setTarget() {
+    currentTarget = getRandomCoord();
+    if (mode === 'click') {
+      coordOverlay.textContent = currentTarget;
+      coordOverlay.classList.remove('wrong');
+      applyTargetHighlight(); 
+    } else {
+      coordOverlay.textContent = '';
+      coordOverlay.classList.remove('wrong');
+      applyTargetHighlight();
+    }
+  }
+
+  const pieceMap = {
+    a8:'♜', b8:'♞', c8:'♝', d8:'♛', e8:'♚', f8:'♝', g8:'♞', h8:'♜',
+    a7:'♟', b7:'♟', c7:'♟', d7:'♟', e7:'♟', f7:'♟', g7:'♟', h7:'♟',
+    a2:'♙', b2:'♙', c2:'♙', d2:'♙', e2:'♙', f2:'♙', g2:'♙', h2:'♙',
+    a1:'♖', b1:'♘', c1:'♗', d1:'♕', e1:'♔', f1:'♗', g1:'♘', h1:'♖',
+  };
+
   function buildBoard() {
-    boardEl.innerHTML = '';
+    boardEl.innerHTML = '<div class="coord-overlay" id="coord-overlay"></div>';
+    coordOverlay = document.getElementById('coord-overlay');
+
     const rankOrder = flipped ? [1,2,3,4,5,6,7,8] : [8,7,6,5,4,3,2,1];
-    const fileOrder = flipped ? [...files].reverse() : [...files];
+    const fileOrder = flipped ? [...files].reverse() : files;
+    const fragment = document.createDocumentFragment();
 
     for (const rank of rankOrder) {
       for (const file of fileOrder) {
         const square = document.createElement('div');
         square.classList.add('square');
-        // Light if (fileIdx + rankIdx) parity depending on orientation
-        const fileIdx = files.indexOf(file);
-        const rankIdx = 8 - rank; // 0-based from top
-        const isLight = (fileIdx + rankIdx) % 2 === 0;
-        square.classList.add(isLight ? 'light' : 'dark');
-        square.dataset.coord = file + rank;
+        
+        // Correct coloring logic: a1 is always dark, regardless of perspective
+        const isEvenLight = (files.indexOf(file) + rank) % 2 === 0;
+        square.classList.add(isEvenLight ? 'light' : 'dark');
+        
+        const coord = file + rank;
+        square.dataset.coord = coord;
         square.addEventListener('click', handleSquareClick);
-        boardEl.appendChild(square);
+        
+        if (showPieces && pieceMap[coord]) {
+          const pieceSpan = document.createElement('span');
+          pieceSpan.className = 'piece';
+          pieceSpan.textContent = pieceMap[coord];
+          square.appendChild(pieceSpan);
+        }
+        fragment.appendChild(square);
       }
     }
+    boardEl.appendChild(fragment);
 
-    // Update rank labels
-    const rankLabels = flipped ? ['1','2','3','4','5','6','7','8'] : ['8','7','6','5','4','3','2','1'];
-    ranksEl.innerHTML = rankLabels.map(r => `<span>${r}</span>`).join('');
-    
-    // Update file labels
-    const fileLabels = flipped ? [...files].reverse() : files;
-    filesEl.innerHTML = fileLabels.map(f => `<span>${f}</span>`).join('');
-  }
+    // Update coordinate labels
+    ranksEl.innerHTML = rankOrder.map(r => `<span>${r}</span>`).join('');
+    filesEl.innerHTML = fileOrder.map(f => `<span>${f}</span>`).join('');
 
-  // Highlight squares
-  function clearHighlights() {
-    document.querySelectorAll('.square').forEach(sq => {
-      sq.classList.remove('highlight', 'wrong-highlight');
-    });
+    // Restore text or highlights if game is running
+    if (gameActive) {
+      if (mode === 'click') coordOverlay.textContent = currentTarget;
+      else applyTargetHighlight();
+    }
   }
 
   function handleSquareClick(e) {
     if (!gameActive || mode !== 'click') return;
-    const square = e.currentTarget;
-    const clickedCoord = square.dataset.coord;
+    const clicked = e.currentTarget.dataset.coord;
 
-    clearHighlights();
-
-    if (clickedCoord === currentTarget) {
-      square.classList.add('highlight');
+    if (clicked === currentTarget) {
       updateStats(true);
-      // Auto advance after short delay
-      setTimeout(() => {
-        clearHighlights();
-        setTarget();
-      }, 800);
+      setTarget();
     } else {
-      square.classList.add('wrong-highlight');
-      updateStats(false);
-      setTimeout(() => {
-        clearHighlights();
-      }, 500);
+      coordOverlay.classList.add('wrong');
+      setTimeout(() => coordOverlay.classList.remove('wrong'), 300);
     }
   }
 
-  // Type mode submission
-  typeSubmit.addEventListener('click', () => {
+  typeInput.addEventListener('input', (e) => {
     if (!gameActive || mode !== 'type') return;
-    const answer = typeInput.value.trim().toLowerCase();
-    if (!answer) return;
-
-    clearHighlights();
-    if (answer === currentTarget) {
-      updateStats(true);
-      typeInput.value = '';
-      setTarget();
-    } else {
-      updateStats(false);
-      // shake input? just flash border
-      typeInput.style.borderColor = 'red';
-      setTimeout(() => { typeInput.style.borderColor = '#666'; }, 400);
+    const answer = e.target.value.trim().toLowerCase();
+    
+    // Check match instantly without needing to press enter
+    if (answer.length === 2) {
+      if (answer === currentTarget) {
+        updateStats(true);
+        e.target.value = '';
+        setTarget();
+      } else {
+        e.target.style.borderColor = '#e74c3c';
+        setTimeout(() => { e.target.style.borderColor = '#555'; e.target.value = ''; }, 300);
+      }
     }
   });
 
-  typeInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') typeSubmit.click();
-  });
-
-  // Timer logic
-  function startTimer(seconds) {
+  function startTimer() {
     stopTimer();
-    if (seconds <= 0) {
-      timerDisplay.textContent = '';
+    timerActive = true;
+    
+    if (timeMode === 'inf') {
+      timerDisplay.textContent = '∞';
       return;
     }
-    timerSeconds = seconds;
-    updateTimerDisplay();
+
+    let seconds = 30;
+    const endTime = Date.now() + seconds * 1000;
+    timerDisplay.textContent = seconds.toFixed(1);
+    
     timerInterval = setInterval(() => {
-      timerSeconds--;
-      updateTimerDisplay();
-      if (timerSeconds <= 0) {
-        stopTimer();
-        gameActive = false;
-        alert('Time is up! Final score: ' + score);
-        // Reset for new game
-        resetGame();
+      const remaining = Math.max(0, (endTime - Date.now()) / 1000);
+      timerDisplay.textContent = remaining.toFixed(1);
+      if (remaining <= 0) {
+        endGame();
       }
-    }, 1000);
+    }, 100);
   }
 
   function stopTimer() {
-    if (timerInterval) {
-      clearInterval(timerInterval);
-      timerInterval = null;
-    }
+    timerActive = false;
+    if (timerInterval) clearInterval(timerInterval);
   }
 
-  function updateTimerDisplay() {
-    timerDisplay.textContent = timerSeconds + 's';
-  }
-
-  // UI toggle functions
-  function setMode(newMode) {
-    mode = newMode;
-    document.getElementById('mode-click-btn').classList.toggle('active', newMode === 'click');
-    document.getElementById('mode-type-btn').classList.toggle('active', newMode === 'type');
-    if (newMode === 'type') {
-      typeInputArea.classList.remove('hidden');
-    } else {
-      typeInputArea.classList.add('hidden');
-    }
+  function startGame() {
+    score = 0;
+    scoreEl.textContent = '0';
+    gameActive = true;
+    
+    startBtn.classList.add('hidden');
+    restartBtn.classList.remove('hidden');
+    
     setTarget();
+    startTimer();
+    
+    if (mode === 'type') {
+      typeInput.value = '';
+      typeInput.focus();
+    }
   }
 
-  function toggleFlip() {
-    flipped = !flipped;
+  function endGame() {
+    stopTimer();
+    gameActive = false;
+    restartBtn.classList.add('hidden');
+    startBtn.classList.remove('hidden');
+    startBtn.textContent = "Play Again";
+    
+    coordOverlay.textContent = '';
+    document.querySelectorAll('.square.target-highlight').forEach(s => s.classList.remove('target-highlight'));
+    typeInput.value = '';
+  }
+
+  function restartGame() {
+    endGame();
+    startGame();
+  }
+
+  // Bindings for Mode toggles
+  document.getElementById('mode-click').addEventListener('click', (e) => {
+    mode = 'click';
+    e.target.classList.add('active');
+    document.getElementById('mode-type').classList.remove('active');
+    typeInputArea.classList.add('hidden');
+    if (gameActive) {
+      coordOverlay.textContent = currentTarget;
+      applyTargetHighlight();
+    }
+  });
+
+  document.getElementById('mode-type').addEventListener('click', (e) => {
+    mode = 'type';
+    e.target.classList.add('active');
+    document.getElementById('mode-click').classList.remove('active');
+    typeInputArea.classList.remove('hidden');
+    if (gameActive) {
+      coordOverlay.textContent = '';
+      applyTargetHighlight();
+      typeInput.focus();
+    }
+  });
+
+  // Bindings for Time toggles
+  document.getElementById('time-inf').addEventListener('click', (e) => {
+    timeMode = 'inf';
+    e.target.classList.add('active');
+    document.getElementById('time-30s').classList.remove('active');
+    timerDisplay.textContent = '∞';
+    if (gameActive) startTimer(); // update current running timer
+  });
+
+  document.getElementById('time-30s').addEventListener('click', (e) => {
+    timeMode = '30s';
+    e.target.classList.add('active');
+    document.getElementById('time-inf').classList.remove('active');
+    timerDisplay.textContent = '0:30';
+    if (gameActive) startTimer(); // restart current running timer
+  });
+
+  // Bindings for Color toggles
+  document.getElementById('color-white').addEventListener('click', (e) => {
+    flipped = false;
+    e.target.classList.add('active');
+    document.getElementById('color-black').classList.remove('active');
     buildBoard();
-  }
+  });
 
-  function toggleCoordinates() {
-    showCoords = !showCoords;
+  document.getElementById('color-black').addEventListener('click', (e) => {
+    flipped = true;
+    e.target.classList.add('active');
+    document.getElementById('color-white').classList.remove('active');
+    buildBoard();
+  });
+
+  // Checkboxes
+  document.getElementById('show-coords').addEventListener('change', (e) => {
+    showCoords = e.target.checked;
     ranksEl.style.visibility = showCoords ? 'visible' : 'hidden';
     filesEl.style.visibility = showCoords ? 'visible' : 'hidden';
-    document.getElementById('coords-toggle-btn').classList.toggle('active', showCoords);
-  }
+  });
 
-  function togglePerspective() {
-    perspective = perspective === 'white' ? 'black' : 'white';
-    document.getElementById('color-btn').textContent = perspective.charAt(0).toUpperCase() + perspective.slice(1);
-    toggleFlip(); // Actually flipping changes perspective
-  }
+  document.getElementById('show-pieces').addEventListener('change', (e) => {
+    showPieces = e.target.checked;
+    buildBoard();
+  });
 
-  function toggleTimer() {
-    const btn = document.getElementById('timer-toggle-btn');
-    if (timerInterval) {
-      stopTimer();
-      btn.textContent = '∞';
-      btn.classList.remove('active');
-    } else {
-      startTimer(30);
-      btn.textContent = '30s';
-      btn.classList.add('active');
-    }
-  }
-
-  function resetGame() {
-    stopTimer();
-    document.getElementById('timer-toggle-btn').textContent = '∞';
-    document.getElementById('timer-toggle-btn').classList.remove('active');
-    gameActive = true;
-    clearHighlights();
-    setTarget();
-  }
-
-  function resetScore() {
-    score = 0;
-    streak = 0;
-    scoreEl.textContent = 0;
-    streakEl.textContent = 0;
-    resetGame();
-  }
-
-  // Event listeners for buttons
-  document.getElementById('mode-click-btn').addEventListener('click', () => setMode('click'));
-  document.getElementById('mode-type-btn').addEventListener('click', () => setMode('type'));
-  document.getElementById('flip-btn').addEventListener('click', toggleFlip);
-  document.getElementById('coords-toggle-btn').addEventListener('click', toggleCoordinates);
-  document.getElementById('color-btn').addEventListener('click', togglePerspective);
-  document.getElementById('timer-toggle-btn').addEventListener('click', toggleTimer);
-  document.getElementById('reset-btn').addEventListener('click', resetScore);
+  // Action Buttons
+  startBtn.addEventListener('click', startGame);
+  restartBtn.addEventListener('click', restartGame);
 
   // Initialize
   buildBoard();
-  setTarget();
-  toggleCoordinates(); // start with coords visible; button state set
+  timerDisplay.textContent = timeMode === '30s' ? '30.0' : '∞';
+
 </script>
 </body>
 </html>
