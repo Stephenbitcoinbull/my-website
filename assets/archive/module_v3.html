@@ -8,205 +8,477 @@
     :root {
       --light: #f0d9b5;
       --dark: #b58863;
-      --highlight: rgba(0,255,0,0.4);
-      --error: rgba(255,0,0,0.4);
+      --highlight-border: #81b64c;
+      --wrong-color: #e74c3c;
+      --bg: #262421;
+      --text: #fff;
+      --panel-bg: #1e1e1e;
     }
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #262421;
-      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       display: flex;
       justify-content: center;
       align-items: center;
       min-height: 100vh;
       margin: 0;
-      flex-direction: column;
+      padding: 20px;
+      box-sizing: border-box;
     }
-    .container {
-      text-align: center;
+    .trainer-container {
+      background: var(--panel-bg);
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 520px;
+      width: 100%;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.6);
     }
-    h1 {
-      margin-bottom: 5px;
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
     }
-    .target {
-      font-size: 1.8rem;
-      margin: 15px 0;
+    .title {
+      font-size: 1.5rem;
       font-weight: bold;
       color: #ffcf0a;
     }
-    .scoreboard {
+    .best-score {
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+    .best-score span {
+      color: #ffcf0a;
+      font-weight: bold;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 15px;
+      align-items: center;
+    }
+    button, .btn {
+      background: #444;
+      border: none;
+      color: white;
+      padding: 8px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    button:hover, .btn:hover {
+      background: #666;
+    }
+    button.active {
+      background: #81b64c;
+      color: #000;
+    }
+    .timer {
       font-size: 1.2rem;
-      margin: 10px 0;
+      font-weight: bold;
+      color: #ffcf0a;
+      margin-left: auto;
+      min-width: 50px;
+      text-align: right;
+    }
+    .board-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    .ranks {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      height: 480px; /* 8*60 */
+      font-size: 12px;
+      color: #aaa;
+      width: 20px;
+      text-align: center;
     }
     .board {
       display: grid;
       grid-template-columns: repeat(8, 60px);
       grid-template-rows: repeat(8, 60px);
       border: 2px solid #3a3a3a;
-      width: fit-content;
-      margin: 15px auto;
       user-select: none;
+      position: relative;
     }
     .square {
       width: 60px;
       height: 60px;
-      display: flex;
-      align-items: flex-end;
-      justify-content: flex-end;
-      font-size: 10px;
-      font-weight: bold;
       cursor: pointer;
       position: relative;
       box-sizing: border-box;
-    }
-    .square.light {
-      background: var(--light);
-      color: var(--dark);
-    }
-    .square.dark {
-      background: var(--dark);
-      color: var(--light);
-    }
-    .square .coord-label {
-      position: absolute;
-      bottom: 2px;
-      right: 3px;
-      opacity: 0.7;
-    }
-    .square.correct {
-      background: rgba(0,255,0,0.45) !important;
       transition: background 0.15s;
     }
-    .square.wrong {
-      background: rgba(255,0,0,0.45) !important;
-      transition: background 0.15s;
+    .square.light { background: var(--light); }
+    .square.dark  { background: var(--dark); }
+    .square.highlight {
+      box-shadow: inset 0 0 0 3px var(--highlight-border);
+      z-index: 2;
     }
-    button {
-      background: #81b64c;
-      border: none;
-      color: white;
-      padding: 10px 25px;
-      font-size: 1rem;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 15px;
-      transition: background 0.2s;
-    }
-    button:hover {
-      background: #6fa042;
+    .square.wrong-highlight {
+      box-shadow: inset 0 0 0 3px var(--wrong-color);
+      z-index: 2;
     }
     .files {
       display: flex;
-      margin-left: 60px;
-      gap: 0;
+      justify-content: space-around;
+      width: 480px;
+      margin-left: 25px; /* align with board after ranks label */
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 5px;
     }
     .files span {
       width: 60px;
       text-align: center;
-      font-size: 12px;
-      opacity: 0.8;
+    }
+    .type-input-area {
+      display: flex;
+      gap: 10px;
+      margin: 12px 0;
+      justify-content: center;
+      align-items: center;
+    }
+    .type-input-area input {
+      padding: 8px 12px;
+      border: 1px solid #666;
+      border-radius: 6px;
+      background: #333;
+      color: white;
+      width: 80px;
+      text-align: center;
+      font-size: 1rem;
+    }
+    .type-input-area button {
+      padding: 8px 16px;
+    }
+    .score-streak {
+      text-align: center;
+      margin: 8px 0;
+      font-size: 0.9rem;
+    }
+    .target-display {
+      text-align: center;
+      font-size: 1.3rem;
+      margin: 8px 0;
+      color: #ffcf0a;
+      font-weight: bold;
+    }
+    .hidden {
+      display: none !important;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Coordinate Trainer</h1>
-    <div class="target" id="target-coord">Click on: e4</div>
-    <div class="scoreboard">
-      Score: <span id="score">0</span> |
-      Streak: <span id="streak">0</span>
-    </div>
-    <div class="board" id="board"></div>
-    <div class="files">
-      <span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span>
-    </div>
-    <button id="reset-btn">Reset Score</button>
-    <p style="margin-top:10px; opacity:0.7;">Click the correct square.</p>
+<div class="trainer-container">
+  <!-- Header -->
+  <div class="header">
+    <div class="title">Vision</div>
+    <div class="best-score">Personal Best: <span id="best-score-display">0</span></div>
   </div>
 
-  <script>
-    const files = ['a','b','c','d','e','f','g','h'];
-    const ranks = [8,7,6,5,4,3,2,1];  // 8 at top, 1 at bottom
+  <!-- Controls row -->
+  <div class="controls">
+    <button id="mode-click-btn" class="active">Click Squares</button>
+    <button id="mode-type-btn">Name Squares</button>
+    <button id="flip-btn">Flip Board</button>
+    <button id="coords-toggle-btn">Coordinates</button>
+    <button id="color-btn">White</button>
+    <button id="timer-toggle-btn">∞</button>
+    <span class="timer" id="timer-display"></span>
+  </div>
 
-    let currentTarget = '';
-    let score = 0;
-    let streak = 0;
+  <!-- Target / feedback -->
+  <div class="target-display" id="target-display">Click on: e4</div>
 
-    const targetEl = document.getElementById('target-coord');
-    const scoreEl = document.getElementById('score');
-    const streakEl = document.getElementById('streak');
+  <!-- Name squares input (hidden by default) -->
+  <div class="type-input-area hidden" id="type-input-area">
+    <input type="text" id="type-input" placeholder="e4" maxlength="2" autocomplete="off">
+    <button id="type-submit">Submit</button>
+  </div>
 
-    function getRandomCoord() {
-      const file = files[Math.floor(Math.random() * 8)];
-      const rank = Math.floor(Math.random() * 8) + 1;
-      return file + rank;
+  <!-- Board + ranks + files -->
+  <div class="board-wrapper">
+    <div class="ranks" id="ranks-labels">
+      <span>8</span><span>7</span><span>6</span><span>5</span><span>4</span><span>3</span><span>2</span><span>1</span>
+    </div>
+    <div>
+      <div class="board" id="board"></div>
+      <div class="files" id="files-labels">
+        <span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Score / streak -->
+  <div class="score-streak">
+    Score: <span id="score">0</span> | Streak: <span id="streak">0</span>
+  </div>
+
+  <button id="reset-btn" style="width: 100%;">Reset Score</button>
+</div>
+
+<script>
+  // State
+  const files = ['a','b','c','d','e','f','g','h'];
+  let flipped = false;
+  let showCoords = true;
+  let perspective = 'white'; // 'white' or 'black'
+  let mode = 'click'; // 'click' or 'type'
+  let score = 0, streak = 0, bestScore = 0;
+  let currentTarget = '';
+  let timerSeconds = 0; // 0 = infinite
+  let timerInterval = null;
+  let gameActive = true;
+
+  // DOM elements
+  const boardEl = document.getElementById('board');
+  const ranksEl = document.getElementById('ranks-labels');
+  const filesEl = document.getElementById('files-labels');
+  const targetDisplay = document.getElementById('target-display');
+  const scoreEl = document.getElementById('score');
+  const streakEl = document.getElementById('streak');
+  const bestScoreDisplay = document.getElementById('best-score-display');
+  const timerDisplay = document.getElementById('timer-display');
+  const typeInputArea = document.getElementById('type-input-area');
+  const typeInput = document.getElementById('type-input');
+  const typeSubmit = document.getElementById('type-submit');
+
+  // Load best score from localStorage
+  bestScore = parseInt(localStorage.getItem('chessCoordBest') || '0');
+  bestScoreDisplay.textContent = bestScore;
+
+  function updateBest() {
+    if (score > bestScore) {
+      bestScore = score;
+      localStorage.setItem('chessCoordBest', bestScore);
+      bestScoreDisplay.textContent = bestScore;
     }
+  }
 
-    function updateTarget() {
-      currentTarget = getRandomCoord();
-      targetEl.textContent = 'Click on: ' + currentTarget;
+  function updateStats(correct) {
+    if (correct) {
+      score++;
+      streak++;
+      updateBest();
+    } else {
+      streak = 0;
     }
+    scoreEl.textContent = score;
+    streakEl.textContent = streak;
+  }
 
-    function updateStats(Correct) {
-      if (Correct) {
-        score++;
-        streak++;
-      } else {
-        streak = 0;
-      }
-      scoreEl.textContent = score;
-      streakEl.textContent = streak;
-    }
+  function getRandomCoord() {
+    const file = files[Math.floor(Math.random() * 8)];
+    const rank = Math.floor(Math.random() * 8) + 1;
+    return file + rank;
+  }
 
-    // Build the board
-    const boardEl = document.getElementById('board');
-    for (let row = 0; row < 8; row++) {
-      for (let col = 0; col < 8; col++) {
-        const file = files[col];
-        const rank = ranks[row];
+  function setTarget() {
+    currentTarget = getRandomCoord();
+    targetDisplay.textContent = (mode === 'click' ? 'Click on: ' : 'Type: ') + currentTarget;
+  }
+
+  // Build board squares
+  function buildBoard() {
+    boardEl.innerHTML = '';
+    const rankOrder = flipped ? [1,2,3,4,5,6,7,8] : [8,7,6,5,4,3,2,1];
+    const fileOrder = flipped ? [...files].reverse() : [...files];
+
+    for (const rank of rankOrder) {
+      for (const file of fileOrder) {
         const square = document.createElement('div');
         square.classList.add('square');
-        // Light if (row+col) even, dark if odd
-        square.classList.add((row + col) % 2 === 0 ? 'light' : 'dark');
+        // Light if (fileIdx + rankIdx) parity depending on orientation
+        const fileIdx = files.indexOf(file);
+        const rankIdx = 8 - rank; // 0-based from top
+        const isLight = (fileIdx + rankIdx) % 2 === 0;
+        square.classList.add(isLight ? 'light' : 'dark');
         square.dataset.coord = file + rank;
-        square.innerHTML = `<span class="coord-label">${file}${rank}</span>`;
         square.addEventListener('click', handleSquareClick);
         boardEl.appendChild(square);
       }
     }
 
-    function handleSquareClick(e) {
-      const square = e.currentTarget;
-      const clickedCoord = square.dataset.coord;
+    // Update rank labels
+    const rankLabels = flipped ? ['1','2','3','4','5','6','7','8'] : ['8','7','6','5','4','3','2','1'];
+    ranksEl.innerHTML = rankLabels.map(r => `<span>${r}</span>`).join('');
+    
+    // Update file labels
+    const fileLabels = flipped ? [...files].reverse() : files;
+    filesEl.innerHTML = fileLabels.map(f => `<span>${f}</span>`).join('');
+  }
 
-      if (clickedCoord === currentTarget) {
-        // Correct
-        square.classList.add('correct');
-        updateStats(true);
-        setTimeout(() => {
-          square.classList.remove('correct');
-          updateTarget();
-        }, 600);
-      } else {
-        // Wrong
-        square.classList.add('wrong');
-        updateStats(false);
-        setTimeout(() => {
-          square.classList.remove('wrong');
-        }, 400);
-      }
-    }
-
-    document.getElementById('reset-btn').addEventListener('click', () => {
-      score = 0;
-      streak = 0;
-      scoreEl.textContent = 0;
-      streakEl.textContent = 0;
-      updateTarget();
+  // Highlight squares
+  function clearHighlights() {
+    document.querySelectorAll('.square').forEach(sq => {
+      sq.classList.remove('highlight', 'wrong-highlight');
     });
+  }
 
-    // Initialize first target
-    updateTarget();
-  </script>
+  function handleSquareClick(e) {
+    if (!gameActive || mode !== 'click') return;
+    const square = e.currentTarget;
+    const clickedCoord = square.dataset.coord;
+
+    clearHighlights();
+
+    if (clickedCoord === currentTarget) {
+      square.classList.add('highlight');
+      updateStats(true);
+      // Auto advance after short delay
+      setTimeout(() => {
+        clearHighlights();
+        setTarget();
+      }, 800);
+    } else {
+      square.classList.add('wrong-highlight');
+      updateStats(false);
+      setTimeout(() => {
+        clearHighlights();
+      }, 500);
+    }
+  }
+
+  // Type mode submission
+  typeSubmit.addEventListener('click', () => {
+    if (!gameActive || mode !== 'type') return;
+    const answer = typeInput.value.trim().toLowerCase();
+    if (!answer) return;
+
+    clearHighlights();
+    if (answer === currentTarget) {
+      updateStats(true);
+      typeInput.value = '';
+      setTarget();
+    } else {
+      updateStats(false);
+      // shake input? just flash border
+      typeInput.style.borderColor = 'red';
+      setTimeout(() => { typeInput.style.borderColor = '#666'; }, 400);
+    }
+  });
+
+  typeInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') typeSubmit.click();
+  });
+
+  // Timer logic
+  function startTimer(seconds) {
+    stopTimer();
+    if (seconds <= 0) {
+      timerDisplay.textContent = '';
+      return;
+    }
+    timerSeconds = seconds;
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+      timerSeconds--;
+      updateTimerDisplay();
+      if (timerSeconds <= 0) {
+        stopTimer();
+        gameActive = false;
+        alert('Time is up! Final score: ' + score);
+        // Reset for new game
+        resetGame();
+      }
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  }
+
+  function updateTimerDisplay() {
+    timerDisplay.textContent = timerSeconds + 's';
+  }
+
+  // UI toggle functions
+  function setMode(newMode) {
+    mode = newMode;
+    document.getElementById('mode-click-btn').classList.toggle('active', newMode === 'click');
+    document.getElementById('mode-type-btn').classList.toggle('active', newMode === 'type');
+    if (newMode === 'type') {
+      typeInputArea.classList.remove('hidden');
+    } else {
+      typeInputArea.classList.add('hidden');
+    }
+    setTarget();
+  }
+
+  function toggleFlip() {
+    flipped = !flipped;
+    buildBoard();
+  }
+
+  function toggleCoordinates() {
+    showCoords = !showCoords;
+    ranksEl.style.visibility = showCoords ? 'visible' : 'hidden';
+    filesEl.style.visibility = showCoords ? 'visible' : 'hidden';
+    document.getElementById('coords-toggle-btn').classList.toggle('active', showCoords);
+  }
+
+  function togglePerspective() {
+    perspective = perspective === 'white' ? 'black' : 'white';
+    document.getElementById('color-btn').textContent = perspective.charAt(0).toUpperCase() + perspective.slice(1);
+    toggleFlip(); // Actually flipping changes perspective
+  }
+
+  function toggleTimer() {
+    const btn = document.getElementById('timer-toggle-btn');
+    if (timerInterval) {
+      stopTimer();
+      btn.textContent = '∞';
+      btn.classList.remove('active');
+    } else {
+      startTimer(30);
+      btn.textContent = '30s';
+      btn.classList.add('active');
+    }
+  }
+
+  function resetGame() {
+    stopTimer();
+    document.getElementById('timer-toggle-btn').textContent = '∞';
+    document.getElementById('timer-toggle-btn').classList.remove('active');
+    gameActive = true;
+    clearHighlights();
+    setTarget();
+  }
+
+  function resetScore() {
+    score = 0;
+    streak = 0;
+    scoreEl.textContent = 0;
+    streakEl.textContent = 0;
+    resetGame();
+  }
+
+  // Event listeners for buttons
+  document.getElementById('mode-click-btn').addEventListener('click', () => setMode('click'));
+  document.getElementById('mode-type-btn').addEventListener('click', () => setMode('type'));
+  document.getElementById('flip-btn').addEventListener('click', toggleFlip);
+  document.getElementById('coords-toggle-btn').addEventListener('click', toggleCoordinates);
+  document.getElementById('color-btn').addEventListener('click', togglePerspective);
+  document.getElementById('timer-toggle-btn').addEventListener('click', toggleTimer);
+  document.getElementById('reset-btn').addEventListener('click', resetScore);
+
+  // Initialize
+  buildBoard();
+  setTarget();
+  toggleCoordinates(); // start with coords visible; button state set
+</script>
 </body>
 </html>
