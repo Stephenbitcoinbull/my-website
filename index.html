@@ -575,7 +575,7 @@
     <script>
         const TOP_LEFT_HASH = "fab74b1393f23152984a71e5f0df8fa7b52a37260d99000a08571d101346f65b"; 
         const BOTTOM_RIGHT_HASH = "8ec87381be4d09b1a51d0130a6e4be8b7b87d55d338d21643909af9079c23283"; 
-        const CHESS_HASH = "AC739DCCD121F71261D87461256E9CA70D8E3B6DBBCC9076D5F3B50C73A5D22D";
+        const CHESS_HASH = "ac739dccd121f71261d87461256e9ca70d8e3b6dbbcc9076d5f3b50c73a5d22d";
 
         // Helper function to hash input using SHA-256
         async function hashString(input) {
@@ -632,7 +632,7 @@
             } else if (hashedInput === CHESS_HASH) {
                 sessionStorage.setItem('auth', 'true');
                 window.location.href = "assets/archive/module_v3.encrypted.html";
-            }else {
+            } else {
                 // Wrong code - clear and show temporary error
                 secretInput.value = '';
                 secretInput.placeholder = 'Wrong code';
