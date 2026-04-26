@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chess Coordinate Trainer</title>
+  <style>
+    :root {
+      --light: #f0d9b5;
+      --dark: #b58863;
+      --highlight: rgba(0,255,0,0.4);
+      --error: rgba(255,0,0,0.4);
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #262421;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      flex-direction: column;
+    }
+    .container {
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 5px;
+    }
+    .target {
+      font-size: 1.8rem;
+      margin: 15px 0;
+      font-weight: bold;
+      color: #ffcf0a;
+    }
+    .scoreboard {
+      font-size: 1.2rem;
+      margin: 10px 0;
+    }
+    .board {
+      display: grid;
+      grid-template-columns: repeat(8, 60px);
+      grid-template-rows: repeat(8, 60px);
+      border: 2px solid #3a3a3a;
+      width: fit-content;
+      margin: 15px auto;
+      user-select: none;
+    }
+    .square {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: flex-end;
+      font-size: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      position: relative;
+      box-sizing: border-box;
+    }
+    .square.light {
+      background: var(--light);
+      color: var(--dark);
+    }
+    .square.dark {
+      background: var(--dark);
+      color: var(--light);
+    }
+    .square .coord-label {
+      position: absolute;
+      bottom: 2px;
+      right: 3px;
+      opacity: 0.7;
+    }
+    .square.correct {
+      background: rgba(0,255,0,0.45) !important;
+      transition: background 0.15s;
+    }
+    .square.wrong {
+      background: rgba(255,0,0,0.45) !important;
+      transition: background 0.15s;
+    }
+    button {
+      background: #81b64c;
+      border: none;
+      color: white;
+      padding: 10px 25px;
+      font-size: 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 15px;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #6fa042;
+    }
+    .files {
+      display: flex;
+      margin-left: 60px;
+      gap: 0;
+    }
+    .files span {
+      width: 60px;
+      text-align: center;
+      font-size: 12px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Coordinate Trainer</h1>
+    <div class="target" id="target-coord">Click on: e4</div>
+    <div class="scoreboard">
+      Score: <span id="score">0</span> |
+      Streak: <span id="streak">0</span>
+    </div>
+    <div class="board" id="board"></div>
+    <div class="files">
+      <span>a</span><span>b</span><span>c</span><span>d</span><span>e</span><span>f</span><span>g</span><span>h</span>
+    </div>
+    <button id="reset-btn">Reset Score</button>
+    <p style="margin-top:10px; opacity:0.7;">Click the correct square.</p>
+  </div>
+
+  <script>
+    const files = ['a','b','c','d','e','f','g','h'];
+    const ranks = [8,7,6,5,4,3,2,1];  // 8 at top, 1 at bottom
+
+    let currentTarget = '';
+    let score = 0;
+    let streak = 0;
+
+    const targetEl = document.getElementById('target-coord');
+    const scoreEl = document.getElementById('score');
+    const streakEl = document.getElementById('streak');
+
+    function getRandomCoord() {
+      const file = files[Math.floor(Math.random() * 8)];
+      const rank = Math.floor(Math.random() * 8) + 1;
+      return file + rank;
+    }
+
+    function updateTarget() {
+      currentTarget = getRandomCoord();
+      targetEl.textContent = 'Click on: ' + currentTarget;
+    }
+
+    function updateStats(Correct) {
+      if (Correct) {
+        score++;
+        streak++;
+      } else {
+        streak = 0;
+      }
+      scoreEl.textContent = score;
+      streakEl.textContent = streak;
+    }
+
+    // Build the board
+    const boardEl = document.getElementById('board');
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        const file = files[col];
+        const rank = ranks[row];
+        const square = document.createElement('div');
+        square.classList.add('square');
+        // Light if (row+col) even, dark if odd
+        square.classList.add((row + col) % 2 === 0 ? 'light' : 'dark');
+        square.dataset.coord = file + rank;
+        square.innerHTML = `<span class="coord-label">${file}${rank}</span>`;
+        square.addEventListener('click', handleSquareClick);
+        boardEl.appendChild(square);
+      }
+    }
+
+    function handleSquareClick(e) {
+      const square = e.currentTarget;
+      const clickedCoord = square.dataset.coord;
+
+      if (clickedCoord === currentTarget) {
+        // Correct
+        square.classList.add('correct');
+        updateStats(true);
+        setTimeout(() => {
+          square.classList.remove('correct');
+          updateTarget();
+        }, 600);
+      } else {
+        // Wrong
+        square.classList.add('wrong');
+        updateStats(false);
+        setTimeout(() => {
+          square.classList.remove('wrong');
+        }, 400);
+      }
+    }
+
+    document.getElementById('reset-btn').addEventListener('click', () => {
+      score = 0;
+      streak = 0;
+      scoreEl.textContent = 0;
+      streakEl.textContent = 0;
+      updateTarget();
+    });
+
+    // Initialize first target
+    updateTarget();
+  </script>
+</body>
+</html>
