@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Chess Coordinate Trainer</title>
   <script>
     // 🔐 SECURITY CHECK - Redirect if not coming from portal
@@ -30,11 +30,17 @@
     
     * { box-sizing: border-box; margin: 0; padding: 0; }
     
+    html, body {
+      overscroll-behavior-y: none; /* Helps prevent bounce-scrolling on mobile */
+    }
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: var(--bg);
       color: var(--text);
+      /* Use svh to account for mobile keyboards/toolbars, fallback to vh */
       min-height: 100vh;
+      min-height: 100svh; 
       display: flex;
       justify-content: center;
       user-select: none;
@@ -88,7 +94,7 @@
     }
 
     .btn-group button {
-      flex: 1 1 50%; /* Allows buttons to wrap neatly if too many */
+      flex: 1 1 50%;
       background: transparent;
       border: none;
       color: #aaa;
@@ -261,7 +267,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 5px;
       margin-top: 25px;
       margin-bottom: 25px;
       width: 100%;
@@ -271,6 +277,15 @@
       font-size: 1.5rem;
       font-weight: bold;
       color: #ffcf0a;
+      text-align: center;
+    }
+
+    .move-log {
+      font-size: 1.1rem;
+      color: #888;
+      text-align: center;
+      min-height: 1.5rem; /* Prevents jumping when toggled/empty */
+      margin-bottom: 5px;
     }
 
     .input-section input {
@@ -395,7 +410,8 @@
       
       <div class="input-section hidden" id="input-section">
         <div id="move-prompt" class="move-prompt hidden"></div>
-        <input type="text" id="type-input" placeholder="e.g. e4" maxlength="3" autocomplete="off">
+        <div id="move-log" class="move-log hidden"></div>
+        <input type="text" id="type-input" placeholder="e.g. e4" maxlength="3" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false">
       </div>
 
     </div>
@@ -449,6 +465,7 @@
   
   const inputSection = document.getElementById('input-section');
   const movePromptEl = document.getElementById('move-prompt');
+  const moveLogEl = document.getElementById('move-log');
   const typeInput = document.getElementById('type-input');
   
   const startBtn = document.getElementById('start-btn');
@@ -533,6 +550,7 @@
       
       const pieceName = movePieceType === 'N' ? 'Knight' : 'Bishop';
       movePromptEl.textContent = `${pieceName}: ${moveStart} ➔ ${moveTarget}`;
+      moveLogEl.textContent = `Current: ${moveStart}`;
       
       // Imaginary piece logic: DO NOT draw the active piece or highlight target
       applyTargetHighlight();
@@ -623,11 +641,14 @@
     if (!gameActive || mode === 'click') return;
     const answer = e.target.value.trim().toLowerCase();
     
+    // Safely clear input without triggering iOS auto-scroll bounce
+    const clearInput = () => setTimeout(() => { e.target.value = ''; }, 10);
+
     if (mode === 'type') {
       if (answer.length === 2) {
         if (answer === currentTarget) {
           updateStats(true);
-          e.target.value = '';
+          clearInput();
           setTarget();
         } else {
           showWrongInput(e.target);
@@ -643,7 +664,7 @@
         
         if (isImpossible) {
           updateStats(true);
-          e.target.value = '';
+          clearInput();
           setTarget();
         } else {
           showWrongInput(e.target);
@@ -651,9 +672,9 @@
       } 
       else if (answer.length === 2 && /^[a-h][1-8]$/.test(answer)) {
         if (isValidMove(movePieceType, moveCurrent, answer)) {
-          // It's a valid step. Clear input instantly for confirmation (imaginary piece style)
           moveCurrent = answer;
-          e.target.value = '';
+          clearInput();
+          moveLogEl.textContent = `Current: ${moveCurrent}`;
           
           if (moveCurrent === moveTarget) {
             updateStats(true);
@@ -670,7 +691,7 @@
         const expected = Math.abs(mathFile1 - mathFile2);
         if (parsedAns === expected) {
           updateStats(true);
-          e.target.value = '';
+          clearInput();
           setTarget();
         } else {
           showWrongInput(e.target);
@@ -746,13 +767,12 @@
 
   // --- Mode Switches & UI Resets ---
   function resetInputState() {
-    // Unhide generic board wrapper, hide math UI
     boardWrapper.classList.remove('hidden');
     mathWrapper.classList.add('hidden');
     
-    // Reset specific inputs
     inputSection.classList.add('hidden');
     movePromptEl.classList.add('hidden');
+    moveLogEl.classList.add('hidden');
     document.getElementById('furigana-label').classList.add('hidden');
     
     coordOverlay.textContent = '';
@@ -795,9 +815,10 @@
     e.target.classList.add('active');
     
     resetInputState();
-    buildBoard(); // Rebuild to remove pieces if needed
+    buildBoard(); 
     inputSection.classList.remove('hidden');
     movePromptEl.classList.remove('hidden');
+    moveLogEl.classList.remove('hidden');
     typeInput.placeholder = "e.g. f4 or imp";
     typeInput.maxLength = 3;
     
