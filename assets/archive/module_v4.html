@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Mental Math Maniac</title>
+  <script>
+    // 🔐 SECURITY CHECK - Redirect if not coming from portal
+    if (sessionStorage.getItem('auth') !== 'true') {
+        // Not authorized – send back to main robotics page
+        window.location.href = '../../index.html';
+    } else {
+        // Authorized – remove the flag so it's one-time use
+        sessionStorage.removeItem('auth');
+    }
+  </script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-hover: #334155;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at top, #1e293b 0%, var(--bg) 100%);
+      color: var(--text);
+      min-height: 100vh;
+      min-height: 100svh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .title {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #60a5fa, #3b82f6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 2rem;
+      text-shadow: 0 4px 20px rgba(59, 130, 246, 0.2);
+    }
+
+    /* --- Menu Grid --- */
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      width: 100%;
+    }
+
+    .menu-btn {
+      background: var(--card-bg);
+      color: var(--text);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      font-size: 1.2rem;
+      font-weight: 600;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .menu-btn:hover {
+      background: var(--card-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .menu-btn.primary {
+      background: var(--primary);
+      border: none;
+    }
+
+    .menu-btn.primary:hover {
+      background: var(--primary-hover);
+    }
+
+    /* --- Game Screen --- */
+    .game-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 60vh;
+      cursor: pointer;
+      border-radius: 20px;
+      background: rgba(30, 41, 59, 0.5);
+      border: 1px solid rgba(255,255,255,0.05);
+      position: relative;
+    }
+
+    .problem {
+      font-size: clamp(3rem, 8vw, 5rem);
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+
+    .answer {
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: bold;
+      color: var(--success);
+      min-height: 5rem;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .answer.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .hint {
+      position: absolute;
+      bottom: 30px;
+      font-size: 1.2rem;
+      color: var(--text-muted);
+      animation: pulse 2s infinite;
+    }
+
+    /* --- Multi Select Screen --- */
+    .multi-select {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    /* --- Key Values Table --- */
+    .key-values-container {
+      width: 100%;
+      max-height: 75vh;
+      overflow-y: auto;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      text-align: left;
+    }
+    
+    .key-table-wrapper {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .kv-section h3 {
+      color: var(--primary);
+      margin-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 5px;
+    }
+
+    .kv-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      color: var(--text-muted);
+    }
+    .kv-row span:last-child { color: var(--text); font-weight: bold; }
+
+    /* --- Top Nav --- */
+    .top-nav {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+    }
+
+    .back-btn {
+      background: transparent;
+      border: 1px solid var(--text-muted);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+
+    .back-btn:hover {
+      background: var(--text-muted);
+      color: var(--bg);
+    }
+
+    .hidden { display: none !important; }
+
+    @keyframes pulse {
+      0% { opacity: 0.5; }
+      50% { opacity: 1; }
+      100% { opacity: 0.5; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-nav hidden" id="top-nav">
+    <button class="back-btn" onclick="app.showMenu()">← Back to Menu (Esc)</button>
+  </div>
+
+  <div class="container" id="menu-container">
+    <div class="title">Mental Math Maniac</div>
+    <div class="menu-grid">
+      <button class="menu-btn" onclick="app.changeScene('Squares')"><span>⬛</span> Squares</button>
+      <button class="menu-btn" onclick="app.changeScene('Perfect Cube Roots')"><span>🧊</span> Cube Roots</button>
+      <button class="menu-btn" onclick="app.changeScene('Logs')"><span>📈</span> Logs</button>
+      <button class="menu-btn" onclick="app.changeScene('Trig')"><span>📐</span> Trig</button>
+      <button class="menu-btn primary" onclick="app.changeScene('Multiplication')"><span>🧮</span> Multiplication</button>
+      <button class="menu-btn" onclick="app.changeScene('Key Values')"><span>🗝️</span> Key Values</button>
+    </div>
+  </div>
+
+  <div class="container hidden" id="multi-select-container">
+    <div class="title" style="font-size: 2rem;">Select Difficulty</div>
+    <div class="multi-select">
+      <button class="menu-btn primary" onclick="app.setMultiMode('2x2')">2-digit × 2-digit</button>
+      <button class="menu-btn primary" onclick="app.setMultiMode('2x3')">2-digit × 3-digit</button>
+    </div>
+  </div>
+
+  <div class="container hidden" id="game-container">
+    <div class="game-screen" id="game-screen" onclick="app.handleGameClick()">
+      <div class="problem" id="problem-display"></div>
+      <div class="answer" id="answer-display"></div>
+      <div class="hint" id="game-hint">Click to Reveal Answer</div>
+    </div>
+  </div>
+
+  <div class="container hidden" id="kv-container">
+    <div class="title" style="font-size: 2rem; margin-bottom: 1rem;">Key Values</div>
+    <div class="key-values-container">
+      <div class="key-table-wrapper">
+        <div class="kv-section">
+          <h3>Common Constants</h3>
+          <div class="kv-row"><span>π</span><span>3.14159</span></div>
+          <div class="kv-row"><span>e</span><span>2.71828</span></div>
+          <div class="kv-row"><span>√2</span><span>1.414</span></div>
+          <div class="kv-row"><span>√3</span><span>1.732</span></div>
+          <div class="kv-row"><span>√5</span><span>2.236</span></div>
+          <div class="kv-row"><span>ln(2)</span><span>0.693</span></div>
+          <div class="kv-row"><span>ln(10)</span><span>2.303</span></div>
+        </div>
+        <div class="kv-section">
+          <h3>Squares (11-20)</h3>
+          <div class="kv-row"><span>11²</span><span>121</span></div>
+          <div class="kv-row"><span>12²</span><span>144</span></div>
+          <div class="kv-row"><span>13²</span><span>169</span></div>
+          <div class="kv-row"><span>14²</span><span>196</span></div>
+          <div class="kv-row"><span>15²</span><span>225</span></div>
+          <div class="kv-row"><span>16²</span><span>256</span></div>
+          <div class="kv-row"><span>17²</span><span>289</span></div>
+          <div class="kv-row"><span>18²</span><span>324</span></div>
+          <div class="kv-row"><span>19²</span><span>361</span></div>
+          <div class="kv-row"><span>20²</span><span>400</span></div>
+        </div>
+        <div class="kv-section">
+          <h3>Cubes (1-10)</h3>
+          <div class="kv-row"><span>1³</span><span>1</span></div>
+          <div class="kv-row"><span>2³</span><span>8</span></div>
+          <div class="kv-row"><span>3³</span><span>27</span></div>
+          <div class="kv-row"><span>4³</span><span>64</span></div>
+          <div class="kv-row"><span>5³</span><span>125</span></div>
+          <div class="kv-row"><span>6³</span><span>216</span></div>
+          <div class="kv-row"><span>7³</span><span>343</span></div>
+          <div class="kv-row"><span>8³</span><span>512</span></div>
+          <div class="kv-row"><span>9³</span><span>729</span></div>
+          <div class="kv-row"><span>10³</span><span>1000</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const app = {
+      currentScene: 'MENU',
+      multiMode: null,
+      showAnswer: false,
+      problem: '',
+      answer: '',
+
+      // DOM Elements
+      els: {
+        nav: document.getElementById('top-nav'),
+        menu: document.getElementById('menu-container'),
+        multiSelect: document.getElementById('multi-select-container'),
+        game: document.getElementById('game-container'),
+        kv: document.getElementById('kv-container'),
+        probDisp: document.getElementById('problem-display'),
+        ansDisp: document.getElementById('answer-display'),
+        hint: document.getElementById('game-hint')
+      },
+
+      hideAll() {
+        Object.values(this.els).forEach(el => {
+          if (el && el.classList) el.classList.add('hidden');
+        });
+      },
+
+      showMenu() {
+        this.currentScene = 'MENU';
+        this.multiMode = null;
+        this.hideAll();
+        this.els.menu.classList.remove('hidden');
+      },
+
+      changeScene(scene) {
+        this.currentScene = scene;
+        this.showAnswer = false;
+        this.multiMode = null;
+        this.hideAll();
+        this.els.nav.classList.remove('hidden');
+
+        if (scene === 'Key Values') {
+          this.els.kv.classList.remove('hidden');
+        } else if (scene === 'Multiplication') {
+          this.els.multiSelect.classList.remove('hidden');
+        } else {
+          this.els.game.classList.remove('hidden');
+          this.generateProblem();
+        }
+      },
+
+      setMultiMode(mode) {
+        this.multiMode = mode;
+        this.els.multiSelect.classList.add('hidden');
+        this.els.game.classList.remove('hidden');
+        this.generateProblem();
+      },
+
+      rand(min, max) {
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+      },
+
+      generateProblem() {
+        this.showAnswer = false;
+        this.els.ansDisp.classList.remove('visible');
+        this.els.hint.textContent = "Click to Reveal Answer";
+
+        if (this.currentScene === 'Squares') {
+          const num = this.rand(30, 500);
+          this.problem = `${num}²`;
+          this.answer = (num ** 2).toString();
+        } 
+        else if (this.currentScene === 'Perfect Cube Roots') {
+          const base = this.rand(12, 99);
+          const cube = base ** 3;
+          this.problem = `³√${cube.toLocaleString()}`;
+          this.answer = base.toString();
+        }
+        else if (this.currentScene === 'Logs') {
+          if (Math.random() < 0.125) { // 1/8 chance
+            const val = this.rand(2, 100);
+            this.problem = `ln(${val})`;
+            this.answer = `~${Math.log(val).toFixed(3)}`;
+          } else {
+            const base = this.rand(2, 100);
+            let arg = this.rand(2, 1000);
+            while (arg === base) arg = this.rand(2, 1000);
+            this.problem = `log<sub>${base}</sub>(${arg})`;
+            this.answer = (Math.log(arg) / Math.log(base)).toFixed(3);
+          }
+        }
+        else if (this.currentScene === 'Trig') {
+          const modes = ['sin', 'cos', 'tan'];
+          const mode = modes[this.rand(0, 2)];
+          let angle, val;
+
+          if (mode === 'sin' || mode === 'cos') {
+            do {
+              angle = this.rand(0, 360);
+              const rad = angle * Math.PI / 180;
+              val = mode === 'sin' ? Math.sin(rad) : Math.cos(rad);
+            } while (Math.abs(val) < 0.1 || Math.abs(val) > 0.9);
+          } else { // Tan
+            do {
+              angle = this.rand(0, 360);
+              const rad = angle * Math.PI / 180;
+              val = Math.tan(rad);
+              // Py: while not (1 / 9 <= abs(val) <= 9) or abs(angle % 180 - 90) < 10
+            } while (Math.abs(val) < 1/9 || Math.abs(val) > 9 || Math.abs((angle % 180) - 90) < 10);
+          }
+          
+          this.problem = `${mode}(${angle}°)`;
+          this.answer = val.toFixed(3);
+        }
+        else if (this.currentScene === 'Multiplication') {
+          let a = this.rand(10, 99);
+          let b = this.multiMode === '2x2' ? this.rand(10, 99) : this.rand(100, 999);
+          this.problem = `${a} × ${b}`;
+          this.answer = (a * b).toString();
+        }
+
+        this.els.probDisp.innerHTML = this.problem;
+        this.els.ansDisp.innerHTML = this.answer;
+      },
+
+      handleGameClick() {
+        if (!this.showAnswer) {
+          this.showAnswer = true;
+          this.els.ansDisp.classList.add('visible');
+          this.els.hint.textContent = "Click for Next Problem";
+        } else {
+          this.generateProblem();
+        }
+      }
+    };
+
+    // Global Key Listener (Escape to menu)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && app.currentScene !== 'MENU') {
+        app.showMenu();
+      }
+    });
+
+  </script>
+</body>
+</html>
